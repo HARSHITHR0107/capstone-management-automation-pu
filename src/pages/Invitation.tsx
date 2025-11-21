@@ -148,26 +148,8 @@ const InvitationPage: React.FC = () => {
         );
     }
 
-    if (error || !invitation) {
-        return (
-            <div className="min-h-screen flex items-center justify-center p-4">
-                <Card className="w-full max-w-md">
-                    <CardHeader>
-                        <CardTitle className="text-center text-red-600">Invalid Invitation</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-center space-y-4">
-                        <Alert variant="destructive">
-                            <AlertDescription>{error || 'This invitation is not valid or has expired.'}</AlertDescription>
-                        </Alert>
-                        <Button onClick={() => navigate('/dashboard')} className="w-full">
-                            Go to Dashboard
-                        </Button>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
-
+    // IMPORTANT: Check if user is logged in FIRST before showing error
+    // This prevents showing "Invalid Invitation" to users who just need to log in
     if (!user) {
         // Store invitation link to redirect back after login/signup
         const returnUrl = `/invitation/${teamId}/${invitationId}${action ? `?action=${action}` : ''}`;
@@ -197,6 +179,27 @@ const InvitationPage: React.FC = () => {
                                 🆕 Create New Account
                             </Button>
                         </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    // NOW check for errors - user is logged in but invitation is invalid
+    if (error || !invitation) {
+        return (
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <Card className="w-full max-w-md">
+                    <CardHeader>
+                        <CardTitle className="text-center text-red-600">Invalid Invitation</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-center space-y-4">
+                        <Alert variant="destructive">
+                            <AlertDescription>{error || 'This invitation is not valid or has expired.'}</AlertDescription>
+                        </Alert>
+                        <Button onClick={() => navigate('/dashboard')} className="w-full">
+                            Go to Dashboard
+                        </Button>
                     </CardContent>
                 </Card>
             </div>
