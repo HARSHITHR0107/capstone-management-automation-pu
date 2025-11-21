@@ -30,7 +30,7 @@ export const sendTeamInvitationEmail = async (
         // Normalize email addresses to lowercase (emails are case-insensitive per RFC)
         const normalizedToEmail = invitationData.toEmail.trim().toLowerCase();
         const normalizedFromEmail = invitationData.teamLeaderEmail?.trim().toLowerCase() || '';
-        
+
         console.log('📧 ===== SENDING TEAM INVITATION EMAIL ===== 📧');
         console.log('To (normalized):', normalizedToEmail);
         console.log('To (original):', invitationData.toEmail);
@@ -175,7 +175,7 @@ export const sendTeamInvitationEmail = async (
                 console.error('   3. Check VITE_EMAILJS_PUBLIC_KEY in .env file');
                 console.error('   4. Verify template variables match: email, to_name, inviter_name, team_name, team_number, invitation_link');
                 console.error('   5. Check EmailJS dashboard for service/template status');
-                
+
                 // Don't return here - let it try the working email service as fallback
             }
         } else if (!emailConfig.enabled) {
@@ -233,7 +233,7 @@ export const sendTeamInvitationEmail = async (
         // Reuse the demo check variables already declared at the top
         console.error('📝 All automated email services failed. Invitation created in database.');
         console.error('💡 Invitation link for manual sharing:', invitationData.invitationLink);
-        
+
         let errorDetails = '⚠️ EMAIL NOT SENT - EmailJS configuration issue:\n';
         if (hasDemoTemplateId) {
             errorDetails += '   ❌ Template ID is using placeholder value (template_8h5x8yq)\n';
@@ -249,7 +249,7 @@ export const sendTeamInvitationEmail = async (
         }
         errorDetails += '   → Update src/lib/emailConfig.ts with real values\n';
         errorDetails += '   → Or use the Email Diagnostics tool in Email Setup tab';
-        
+
         console.error(errorDetails);
 
         // Copy invitation link to clipboard (NO email client popup)
@@ -391,8 +391,15 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
 
 /**
  * Generate invitation link for team joining
+ * Uses VITE_APP_URL environment variable if set, otherwise falls back to window.location.origin
+ * This ensures invitation links always use the correct production URL
  */
 export const generateInvitationLink = (teamId: string, inviteId: string): string => {
-    const baseUrl = window.location.origin;
+    // Use environment variable if available (recommended for production)
+    // Otherwise fallback to current origin (works for local development)
+    const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+
+    console.log('🔗 Generating invitation link with base URL:', baseUrl);
+
     return `${baseUrl}/invitation/${teamId}/${inviteId}`;
 };
