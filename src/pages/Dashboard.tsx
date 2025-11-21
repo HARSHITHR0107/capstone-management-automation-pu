@@ -61,19 +61,24 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-bold text-blue-600">Capstone Portal</h1>
-            <div className="text-sm text-muted-foreground">
+      {/* Header - Mobile Responsive */}
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-50">
+        <div className="flex justify-between items-center gap-2">
+          {/* Logo and Title */}
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold text-blue-600 truncate">
+              Capstone Portal
+            </h1>
+            <div className="hidden sm:block text-sm text-muted-foreground whitespace-nowrap">
               {user.role.charAt(0).toUpperCase() + user.role.slice(1)} Portal
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="text-sm">
+
+          {/* User Info and Logout - Desktop */}
+          <div className="hidden md:flex items-center gap-4">
+            <div className="text-sm text-right">
               <div className="font-medium">{user.name}</div>
-              <div className="text-muted-foreground">{user.email}</div>
+              <div className="text-muted-foreground text-xs">{user.email}</div>
             </div>
             <Button
               variant="outline"
@@ -85,6 +90,28 @@ export default function Dashboard() {
               {isLoading ? 'Logging out...' : 'Logout'}
             </Button>
           </div>
+
+          {/* Logout Button - Mobile */}
+          <div className="flex md:hidden items-center gap-2">
+            <div className="text-xs text-right max-w-[120px]">
+              <div className="font-medium truncate">{user.name}</div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              disabled={isLoading}
+              className="shrink-0"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="sr-only">Logout</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Role Badge */}
+        <div className="sm:hidden mt-2 text-xs text-muted-foreground">
+          {user.role.charAt(0).toUpperCase() + user.role.slice(1)} Portal
         </div>
       </header>
 
