@@ -627,25 +627,27 @@ export const FacultyDashboard: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-center">
+    <div className="p-4 md:p-6 space-y-6 bg-gray-50 min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0">
         <h1 className="text-3xl font-bold">
           {user?.role === 'faculty' ? 'Faculty Guide' : 'Reviewer'} Dashboard
         </h1>
-        <div className="flex items-center space-x-4">
-          {unreadCount > 0 && (
-            <div className="relative">
-              <Bell className="h-5 w-5 text-blue-600 animate-pulse" />
-              <Badge
-                variant="destructive"
-                className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs rounded-full"
-              >
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </Badge>
-            </div>
-          )}
-          <div className="text-sm text-muted-foreground">
+        <div className="flex items-center space-x-4 w-full md:w-auto justify-between md:justify-end">
+          <div className="text-sm text-muted-foreground order-2 md:order-1">
             Welcome, {user?.name}
+          </div>
+          <div className="relative order-1 md:order-2">
+            {unreadCount > 0 && (
+              <>
+                <Bell className="h-5 w-5 text-blue-600 animate-pulse" />
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs rounded-full"
+                >
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Badge>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -714,11 +716,11 @@ export const FacultyDashboard: React.FC = () => {
       </div>
 
       <Tabs defaultValue="teams" className="w-full">
-        <TabsList>
-          <TabsTrigger value="teams">My Teams</TabsTrigger>
-          <TabsTrigger value="evaluation">Evaluation</TabsTrigger>
-          <TabsTrigger value="schedule">Schedule</TabsTrigger>
-          <TabsTrigger value="notifications" className="relative">
+        <TabsList className="w-full justify-start overflow-x-auto flex-nowrap no-scrollbar">
+          <TabsTrigger value="teams" className="whitespace-nowrap">My Teams</TabsTrigger>
+          <TabsTrigger value="evaluation" className="whitespace-nowrap">Evaluation</TabsTrigger>
+          <TabsTrigger value="schedule" className="whitespace-nowrap">Schedule</TabsTrigger>
+          <TabsTrigger value="notifications" className="relative whitespace-nowrap">
             <Bell className="h-4 w-4 mr-2" />
             Notifications
             {unreadCount > 0 && (
@@ -760,12 +762,12 @@ export const FacultyDashboard: React.FC = () => {
                     return (
                       <Card key={team.id} className="border-l-4 border-l-blue-500">
                         <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <CardTitle className="text-xl flex items-center gap-2 mb-2">
+                          <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+                            <div className="flex-1 w-full">
+                              <CardTitle className="text-xl flex flex-wrap items-center gap-2 mb-2">
                                 {team.name}
                                 {team.teamNumber && (
-                                  <Badge variant="default" className="font-mono">
+                                  <Badge variant="default" className="font-mono whitespace-nowrap">
                                     {team.teamNumber}
                                   </Badge>
                                 )}
@@ -773,12 +775,12 @@ export const FacultyDashboard: React.FC = () => {
                               {project ? (
                                 <div className="space-y-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
                                   <div className="flex items-start gap-2">
-                                    <BookOpen className="h-5 w-5 text-blue-600 mt-0.5" />
-                                    <div className="flex-1">
-                                      <p className="font-semibold text-base text-blue-900">{project.title}</p>
-                                      <p className="text-sm text-blue-700 mt-1">{project.description}</p>
+                                    <BookOpen className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-semibold text-base text-blue-900 break-words">{project.title}</p>
+                                      <p className="text-sm text-blue-700 mt-1 break-words">{project.description}</p>
                                       <div className="mt-2">
-                                        <Badge variant="secondary">{project.specialization}</Badge>
+                                        <Badge variant="secondary" className="whitespace-normal text-left">{project.specialization}</Badge>
                                       </div>
                                     </div>
                                   </div>
@@ -787,7 +789,7 @@ export const FacultyDashboard: React.FC = () => {
                                 <p className="text-sm text-muted-foreground">No project assigned</p>
                               )}
                             </div>
-                            <Badge variant={team.status === 'assigned' ? 'default' : 'secondary'}>
+                            <Badge variant={team.status === 'assigned' ? 'default' : 'secondary'} className="whitespace-nowrap">
                               {team.status}
                             </Badge>
                           </div>
@@ -920,7 +922,7 @@ export const FacultyDashboard: React.FC = () => {
         <TabsContent value="evaluation" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0">
                 <div>
                   <CardTitle>Team Evaluations</CardTitle>
                   <CardDescription>Review materials and assign marks to team members</CardDescription>
@@ -929,6 +931,7 @@ export const FacultyDashboard: React.FC = () => {
                   onClick={handleDownloadExcel}
                   disabled={assignedTeams.length === 0}
                   variant="outline"
+                  className="w-full md:w-auto"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download Excel Template
@@ -1017,7 +1020,7 @@ export const FacultyDashboard: React.FC = () => {
                     return (
                       <Card key={team.id}>
                         <CardHeader>
-                          <div className="flex justify-between items-center">
+                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0">
                             <div>
                               <CardTitle>{team.name}</CardTitle>
                               <CardDescription>{getProjectTitle(team.projectId)}</CardDescription>
@@ -1028,6 +1031,7 @@ export const FacultyDashboard: React.FC = () => {
                                 setSelectedTeamForSchedule(team.id);
                                 setScheduleDialogOpen(true);
                               }}
+                              className="w-full md:w-auto"
                             >
                               <Calendar className="h-4 w-4 mr-2" />
                               Schedule New
@@ -1280,8 +1284,8 @@ export const FacultyDashboard: React.FC = () => {
                       key={phase.phase}
                       variant={selectedReviewPhase === phase.phase ? "default" : "outline"}
                       className={`flex flex-col items-center p-4 h-auto ${selectedReviewPhase === phase.phase
-                          ? 'bg-blue-600 hover:bg-blue-700'
-                          : 'hover:bg-blue-50'
+                        ? 'bg-blue-600 hover:bg-blue-700'
+                        : 'hover:bg-blue-50'
                         }`}
                       onClick={() => {
                         setSelectedReviewPhase(phase.phase);
@@ -1436,9 +1440,9 @@ export const FacultyDashboard: React.FC = () => {
                                   <div className="w-full bg-gray-200 rounded-full h-2">
                                     <div
                                       className={`h-2 rounded-full transition-all ${percentage >= 90 ? 'bg-green-500' :
-                                          percentage >= 70 ? 'bg-blue-500' :
-                                            percentage >= 50 ? 'bg-yellow-500' :
-                                              'bg-red-500'
+                                        percentage >= 70 ? 'bg-blue-500' :
+                                          percentage >= 50 ? 'bg-yellow-500' :
+                                            'bg-red-500'
                                         }`}
                                       style={{ width: `${Math.min(percentage, 100)}%` }}
                                     />
