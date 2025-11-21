@@ -1,10 +1,25 @@
 /**
  * Global Notification Service
- * Handles sending notifications to all users (students and faculty)
+ * Handles sending notifications to all registered users (students and faculty)
  */
 
 import { db } from './firebase';
-import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, Timestamp } from 'firebase/firestore';
+import {
+    collection,
+    addDoc,
+    query,
+    where,
+    getDocs,
+    orderBy,
+    limit,
+    serverTimestamp,
+    doc,
+    updateDoc,
+    arrayUnion,
+    getDoc,
+    Timestamp,
+    onSnapshot,
+} from 'firebase/firestore';
 
 export interface GlobalNotification {
     id: string;
@@ -14,10 +29,10 @@ export interface GlobalNotification {
     sentBy: string;
     sentByName: string;
     createdAt: Date;
-    readBy: string[];
+    readBy: string[]; // Array of user IDs who have read this notification
 }
 
-export interface SendGlobalNotificationParams {
+export interface SendNotificationData {
     title: string;
     message: string;
     targetRoles: ('student' | 'faculty' | 'admin')[];
@@ -25,57 +40,49 @@ export interface SendGlobalNotificationParams {
     sentByName: string;
 }
 
-export interface SendGlobalNotificationResult {
-    success: boolean;
-    error?: string;
-    notificationId?: string;
-}
-
 /**
  * Send a global notification to all users with specified roles
  */
 export const sendGlobalNotification = async (
-    params: SendGlobalNotificationParams
-): Promise<SendGlobalNotificationResult> => {
+    data: SendNotificationData
+): Promise<{ success: boolean; notificationId?: string; error?: string }> => {
     try {
-        console.log('📢 Sending global notification:', params);
+        console.log('📢 Sending global notification:', data);
 
-        // Validate parameters
-        if (!params.title || !params.message) {
-            return {
-                success: false,
-                error: 'Title and message are required',
-            };
-        }
-
-        if (!params.targetRoles || params.targetRoles.length === 0) {
-            return {
-                success: false,
-                error: 'At least one target role is required',
-            };
-        }
-
-        // Create notification document
         const notificationData = {
-            title: params.title.trim(),
-            message: params.message.trim(),
-            targetRoles: params.targetRoles,
-            sentBy: params.sentBy,
-            sentByName: params.sentByName,
-            createdAt: serverTimestamp(),
+            title: data.title.trim(),
+            message: data.message.trim(),
+            targetRoles: data.targetRoles,
+            sentBy: data.sentBy,
+            sentByName: data.sentByName,
             readBy: [],
+            createdAt: serverTimestamp(),
         };
 
-        const docRef = await addDoc(collection(db, 'globalNotifications'), notificationData);
+        const docRef = await addDoc(
+            collection(db, 'globalNotifications'),
+            notificationData
+        );
 
         console.log('✅ Global notification sent successfully:', docRef.id);
+
+        // Get all users matching the target roles
+        const usersSnapshot = await getDocs(
+            query(
+                collection(db, 'users'),
+                where('role', 'in', data.targetRoles)
+            )
+        );
+
+        const totalUsers = usersSnapshot.size;
+        console.log(`📊 Notification will be visible to ${totalUsers} users`);
 
         return {
             success: true,
             notificationId: docRef.id,
         };
     } catch (error: any) {
-        console.error('❌ Error sending global notification:', error);
+        console.error('❌ Failed to send global notification:', error);
         return {
             success: false,
             error: error.message || 'Failed to send notification',
@@ -84,21 +91,24 @@ export const sendGlobalNotification = async (
 };
 
 /**
- * Get all sent global notifications
+ * Get all global notifications for a user based on their role
  */
-export const getAllSentNotifications = async (): Promise<GlobalNotification[]> => {
+export const getGlobalNotifications = async (
+    userRole: string
+): Promise<GlobalNotification[]> => {
     try {
-        console.log('📥 Fetching all global notifications...');
-
+        // Try indexed query first
         const q = query(
             collection(db, 'globalNotifications'),
-            orderBy('createdAt', 'desc')
+            where('targetRoles', 'array-contains', userRole),
+            orderBy('createdAt', 'desc'),
+            limit(50)
         );
 
-        const querySnapshot = await getDocs(q);
+        const snapshot = await getDocs(q);
         const notifications: GlobalNotification[] = [];
 
-        querySnapshot.forEach((doc) => {
+        snapshot.forEach((doc) => {
             const data = doc.data();
             notifications.push({
                 id: doc.id,
@@ -112,37 +122,23 @@ export const getAllSentNotifications = async (): Promise<GlobalNotification[]> =
             });
         });
 
-        console.log(`✅ Fetched ${notifications.length} global notifications`);
         return notifications;
-    } catch (error) {
-        console.error('❌ Error fetching global notifications:', error);
-        return [];
-    }
-};
+    } catch (error: any) {
+        console.warn('⚠️ Indexed query failed, trying fallback:', error);
 
-/**
- * Get global notifications for a specific user based on their role
- */
-export const getNotificationsForUser = async (
-    userId: string,
-    userRole: 'student' | 'faculty' | 'admin'
-): Promise<GlobalNotification[]> => {
-    try {
-        console.log(`📥 Fetching notifications for user ${userId} with role ${userRole}...`);
+        // Fallback: query without orderBy
+        try {
+            const fallbackQuery = query(
+                collection(db, 'globalNotifications'),
+                where('targetRoles', 'array-contains', userRole),
+                limit(50)
+            );
 
-        const q = query(
-            collection(db, 'globalNotifications'),
-            orderBy('createdAt', 'desc')
-        );
+            const snapshot = await getDocs(fallbackQuery);
+            const notifications: GlobalNotification[] = [];
 
-        const querySnapshot = await getDocs(q);
-        const notifications: GlobalNotification[] = [];
-
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-
-            // Only include notifications that target this user's role
-            if (data.targetRoles && data.targetRoles.includes(userRole)) {
+            snapshot.forEach((doc) => {
+                const data = doc.data();
                 notifications.push({
                     id: doc.id,
                     title: data.title || '',
@@ -153,15 +149,174 @@ export const getNotificationsForUser = async (
                     createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
                     readBy: data.readBy || [],
                 });
-            }
-        });
+            });
 
-        console.log(`✅ Fetched ${notifications.length} notifications for user ${userId}`);
-        return notifications;
-    } catch (error) {
-        console.error('❌ Error fetching notifications for user:', error);
-        return [];
+            // Sort client-side
+            notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+            return notifications;
+        } catch (fallbackError: any) {
+            console.warn('⚠️ Fallback query failed, trying last resort:', fallbackError);
+
+            // Last resort: fetch all and filter client-side
+            try {
+                const allQuery = query(collection(db, 'globalNotifications'), limit(100));
+                const snapshot = await getDocs(allQuery);
+                const notifications: GlobalNotification[] = [];
+
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const targetRoles = data.targetRoles || [];
+
+                    if (targetRoles.includes(userRole)) {
+                        notifications.push({
+                            id: doc.id,
+                            title: data.title || '',
+                            message: data.message || '',
+                            targetRoles: targetRoles,
+                            sentBy: data.sentBy || '',
+                            sentByName: data.sentByName || 'Admin',
+                            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+                            readBy: data.readBy || [],
+                        });
+                    }
+                });
+
+                // Sort client-side
+                notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+                return notifications;
+            } catch (lastResortError) {
+                console.error('❌ All notification queries failed:', lastResortError);
+                return [];
+            }
+        }
     }
+};
+
+/**
+ * Subscribe to global notifications in real-time
+ */
+export const subscribeToGlobalNotifications = (
+    userRole: string,
+    callback: (notifications: GlobalNotification[]) => void
+): (() => void) => {
+    let unsubscribe: (() => void) | null = null;
+    let activeUnsubscribe: (() => void) | null = null;
+
+    const setupFallbackQuery = () => {
+        // Fallback: query without orderBy (no index needed)
+        const fallbackQuery = query(
+            collection(db, 'globalNotifications'),
+            where('targetRoles', 'array-contains', userRole),
+            limit(50)
+        );
+
+        activeUnsubscribe = onSnapshot(
+            fallbackQuery,
+            (snapshot) => {
+                const notifications: GlobalNotification[] = [];
+
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    notifications.push({
+                        id: doc.id,
+                        title: data.title || '',
+                        message: data.message || '',
+                        targetRoles: data.targetRoles || [],
+                        sentBy: data.sentBy || '',
+                        sentByName: data.sentByName || 'Admin',
+                        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+                        readBy: data.readBy || [],
+                    });
+                });
+
+                // Sort client-side
+                notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+                callback(notifications);
+            },
+            (fallbackError: any) => {
+                console.error('❌ Fallback query also failed:', fallbackError);
+
+                // Last resort: fetch all and filter client-side
+                const allQuery = query(collection(db, 'globalNotifications'), limit(100));
+                activeUnsubscribe = onSnapshot(
+                    allQuery,
+                    (snapshot) => {
+                        const notifications: GlobalNotification[] = [];
+
+                        snapshot.forEach((doc) => {
+                            const data = doc.data();
+                            const targetRoles = data.targetRoles || [];
+
+                            // Filter client-side
+                            if (targetRoles.includes(userRole)) {
+                                notifications.push({
+                                    id: doc.id,
+                                    title: data.title || '',
+                                    message: data.message || '',
+                                    targetRoles: targetRoles,
+                                    sentBy: data.sentBy || '',
+                                    sentByName: data.sentByName || 'Admin',
+                                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+                                    readBy: data.readBy || [],
+                                });
+                            }
+                        });
+
+                        // Sort client-side
+                        notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+                        callback(notifications);
+                    },
+                    (lastResortError: any) => {
+                        console.error('❌ All notification queries failed:', lastResortError);
+                        callback([]);
+                    }
+                );
+            }
+        );
+    };
+
+    // Try the indexed query first (with orderBy)
+    const indexedQuery = query(
+        collection(db, 'globalNotifications'),
+        where('targetRoles', 'array-contains', userRole),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+    );
+
+    // Try indexed query first
+    unsubscribe = onSnapshot(
+        indexedQuery,
+        (snapshot) => {
+            const notifications: GlobalNotification[] = [];
+
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                notifications.push({
+                    id: doc.id,
+                    title: data.title || '',
+                    message: data.message || '',
+                    targetRoles: data.targetRoles || [],
+                    sentBy: data.sentBy || '',
+                    sentByName: data.sentByName || 'Admin',
+                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+                    readBy: data.readBy || [],
+                });
+            });
+
+            callback(notifications);
+        },
+        (error: any) => {
+            console.warn('⚠️ Indexed query failed, trying fallback query:', error);
+            setupFallbackQuery();
+        }
+    );
+
+    activeUnsubscribe = unsubscribe;
+
+    return () => {
+        if (activeUnsubscribe) activeUnsubscribe();
+        if (unsubscribe && unsubscribe !== activeUnsubscribe) unsubscribe();
+    };
 };
 
 /**
@@ -172,19 +327,55 @@ export const markNotificationAsRead = async (
     userId: string
 ): Promise<boolean> => {
     try {
-        console.log(`📖 Marking notification ${notificationId} as read by user ${userId}...`);
-
-        const { doc, updateDoc, arrayUnion } = await import('firebase/firestore');
-
         const notificationRef = doc(db, 'globalNotifications', notificationId);
-        await updateDoc(notificationRef, {
-            readBy: arrayUnion(userId),
-        });
+        const notificationDoc = await getDoc(notificationRef);
 
-        console.log('✅ Notification marked as read');
+        if (!notificationDoc.exists()) {
+            console.error('Notification not found:', notificationId);
+            return false;
+        }
+
+        const data = notificationDoc.data();
+        const readBy = data.readBy || [];
+
+        if (!readBy.includes(userId)) {
+            await updateDoc(notificationRef, {
+                readBy: arrayUnion(userId),
+            });
+            console.log('✅ Notification marked as read');
+        }
+
         return true;
     } catch (error) {
-        console.error('❌ Error marking notification as read:', error);
+        console.error('❌ Failed to mark notification as read:', error);
+        return false;
+    }
+};
+
+/**
+ * Mark all notifications as read for a user
+ */
+export const markAllNotificationsAsRead = async (
+    userId: string,
+    userRole: string
+): Promise<boolean> => {
+    try {
+        const notifications = await getGlobalNotifications(userRole);
+
+        const updatePromises = notifications.map(async (notification) => {
+            if (!notification.readBy.includes(userId)) {
+                const notificationRef = doc(db, 'globalNotifications', notification.id);
+                await updateDoc(notificationRef, {
+                    readBy: arrayUnion(userId),
+                });
+            }
+        });
+
+        await Promise.all(updatePromises);
+        console.log('✅ All notifications marked as read');
+        return true;
+    } catch (error) {
+        console.error('❌ Failed to mark all notifications as read:', error);
         return false;
     }
 };
@@ -194,18 +385,49 @@ export const markNotificationAsRead = async (
  */
 export const getUnreadNotificationCount = async (
     userId: string,
-    userRole: 'student' | 'faculty' | 'admin'
+    userRole: string
 ): Promise<number> => {
     try {
-        const notifications = await getNotificationsForUser(userId, userRole);
-        const unreadCount = notifications.filter(
-            (notification) => !notification.readBy.includes(userId)
-        ).length;
-
-        console.log(`📊 User ${userId} has ${unreadCount} unread notifications`);
-        return unreadCount;
+        const notifications = await getGlobalNotifications(userRole);
+        return notifications.filter((n) => !n.readBy.includes(userId)).length;
     } catch (error) {
-        console.error('❌ Error getting unread notification count:', error);
+        console.error('❌ Failed to get unread count:', error);
         return 0;
     }
 };
+
+/**
+ * Get all sent notifications (for admin dashboard)
+ */
+export const getAllSentNotifications = async (): Promise<GlobalNotification[]> => {
+    try {
+        const q = query(
+            collection(db, 'globalNotifications'),
+            orderBy('createdAt', 'desc'),
+            limit(100)
+        );
+
+        const snapshot = await getDocs(q);
+        const notifications: GlobalNotification[] = [];
+
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            notifications.push({
+                id: doc.id,
+                title: data.title || '',
+                message: data.message || '',
+                targetRoles: data.targetRoles || [],
+                sentBy: data.sentBy || '',
+                sentByName: data.sentByName || 'Admin',
+                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+                readBy: data.readBy || [],
+            });
+        });
+
+        return notifications;
+    } catch (error) {
+        console.error('❌ Failed to fetch all notifications:', error);
+        return [];
+    }
+};
+

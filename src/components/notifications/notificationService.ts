@@ -31,7 +31,7 @@ export async function sendFeedbackNotificationEmail(
 ): Promise<void> {
   try {
     console.log('📧 Sending feedback notification emails...');
-    
+
     const emailPromises = teamMembers.map(async (member) => {
       const emailData = {
         to: member.email,
@@ -39,12 +39,12 @@ export async function sendFeedbackNotificationEmail(
         html: generateFeedbackEmailHTML(member.name, notification),
         text: generateFeedbackEmailText(member.name, notification)
       };
-      
+
       console.log(`✉️ Email to: ${member.email}`);
-      
+
       // Integration with your email service (e.g., SendGrid, AWS SES, etc.)
       // await sendEmail(emailData);
-      
+
       // For now, we'll use the browser notification API
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification(`New Feedback - ${notification.teamName}`, {
@@ -54,7 +54,7 @@ export async function sendFeedbackNotificationEmail(
         });
       }
     });
-    
+
     await Promise.all(emailPromises);
     console.log(`✅ Feedback notifications sent to ${teamMembers.length} members`);
   } catch (error) {
@@ -72,7 +72,7 @@ export async function sendScheduleNotificationEmail(
 ): Promise<void> {
   try {
     console.log('📧 Sending schedule notification emails...');
-    
+
     const emailPromises = teamMembers.map(async (member) => {
       const emailData = {
         to: member.email,
@@ -80,12 +80,12 @@ export async function sendScheduleNotificationEmail(
         html: generateScheduleEmailHTML(member.name, notification),
         text: generateScheduleEmailText(member.name, notification)
       };
-      
+
       console.log(`✉️ Email to: ${member.email}`);
-      
+
       // Integration with your email service
       // await sendEmail(emailData);
-      
+
       // Browser notification
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification(`Review Scheduled - ${notification.teamName}`, {
@@ -95,7 +95,7 @@ export async function sendScheduleNotificationEmail(
         });
       }
     });
-    
+
     await Promise.all(emailPromises);
     console.log(`✅ Schedule notifications sent to ${teamMembers.length} members`);
   } catch (error) {
@@ -136,14 +136,14 @@ function generateFeedbackEmailHTML(studentName: string, notification: FeedbackNo
             <p style="white-space: pre-wrap;">${notification.feedbackContent}</p>
           </div>
           
-          <p><strong>Submitted on:</strong> ${notification.timestamp.toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          })}</p>
+          <p><strong>Submitted on:</strong> ${notification.timestamp.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })}</p>
           
           <a href="${window.location.origin}/student" class="button">View in Dashboard</a>
           
@@ -173,14 +173,14 @@ Your faculty guide ${notification.facultyName} has provided feedback for your te
 FEEDBACK:
 ${notification.feedbackContent}
 
-Submitted on: ${notification.timestamp.toLocaleDateString('en-US', { 
-  weekday: 'long', 
-  year: 'numeric', 
-  month: 'long', 
-  day: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit'
-})}
+Submitted on: ${notification.timestamp.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })}
 
 Please log in to your dashboard to view and respond to this feedback.
 
@@ -200,7 +200,7 @@ function generateScheduleEmailHTML(studentName: string, notification: ScheduleNo
     month: 'long',
     day: 'numeric'
   });
-  
+
   return `
     <!DOCTYPE html>
     <html>
@@ -283,7 +283,7 @@ function generateScheduleEmailText(studentName: string, notification: ScheduleNo
     month: 'long',
     day: 'numeric'
   });
-  
+
   return `
 Dear ${studentName},
 
