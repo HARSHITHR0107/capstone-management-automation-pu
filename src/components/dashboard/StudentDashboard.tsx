@@ -182,9 +182,9 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
             <div className="w-full bg-gray-200 rounded-full h-3">
               <div
                 className={`h-3 rounded-full transition-all ${percentage >= 90 ? 'bg-green-500' :
-                    percentage >= 70 ? 'bg-blue-500' :
-                      percentage >= 50 ? 'bg-yellow-500' :
-                        'bg-red-500'
+                  percentage >= 70 ? 'bg-blue-500' :
+                    percentage >= 50 ? 'bg-yellow-500' :
+                      'bg-red-500'
                   }`}
                 style={{ width: `${(completedReviews / reviewPhases.length) * 100}%` }}
               />
@@ -220,8 +220,8 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
                   className={`p-4 border rounded-lg ${isEvaluated ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200' : 'bg-gray-50 border-gray-200'
                     }`}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
+                  <div className="flex flex-col md:flex-row items-start justify-between mb-3 gap-4 md:gap-0">
+                    <div className="flex-1 w-full md:w-auto">
                       <div className="flex items-center gap-2 mb-1">
                         <h4 className="font-semibold">{phase.name}</h4>
                         {isEvaluated ? (
@@ -239,7 +239,7 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
                       </p>
                     </div>
                     {isEvaluated && (
-                      <div className="text-right">
+                      <div className="text-left md:text-right w-full md:w-auto flex flex-row md:flex-col justify-between md:justify-start items-center md:items-end mt-2 md:mt-0">
                         <div className="text-2xl font-bold text-blue-600">
                           {marks.toFixed(1)}/{maxMarks}
                         </div>
@@ -255,9 +255,9 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
                       <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
                         <div
                           className={`h-2 rounded-full transition-all ${phasePercentage >= 90 ? 'bg-green-500' :
-                              phasePercentage >= 70 ? 'bg-blue-500' :
-                                phasePercentage >= 50 ? 'bg-yellow-500' :
-                                  'bg-red-500'
+                            phasePercentage >= 70 ? 'bg-blue-500' :
+                              phasePercentage >= 50 ? 'bg-yellow-500' :
+                                'bg-red-500'
                             }`}
                           style={{ width: `${Math.min(phasePercentage, 100)}%` }}
                         />
@@ -966,10 +966,10 @@ export const StudentDashboard: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Student Dashboard</h1>
-        <div className="flex items-center space-x-4">
+    <div className="p-4 md:p-6 space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0">
+        <h1 className="text-2xl md:text-3xl font-bold">Student Dashboard</h1>
+        <div className="flex flex-wrap items-center gap-2 md:space-x-4 w-full md:w-auto">
           {unreadCount > 0 && (
             <div className="relative">
               <Bell className="h-5 w-5 text-blue-600 animate-pulse" />
@@ -981,8 +981,8 @@ export const StudentDashboard: React.FC = () => {
               </Badge>
             </div>
           )}
-          <Button variant="outline" size="sm" onClick={() => { if (typeof window !== 'undefined') { const win = window as Window & { runCompleteDemo?: () => void }; if (win.runCompleteDemo) { win.runCompleteDemo(); } } }}>🧪 Test Email System</Button>
-          <div className="text-sm text-muted-foreground">Welcome, {user?.name}</div>
+          <Button variant="outline" size="sm" className="flex-1 md:flex-none" onClick={() => { if (typeof window !== 'undefined') { const win = window as Window & { runCompleteDemo?: () => void }; if (win.runCompleteDemo) { win.runCompleteDemo(); } } }}>🧪 Test Email System</Button>
+          <div className="text-sm text-muted-foreground whitespace-nowrap">Welcome, {user?.name}</div>
         </div>
       </div>
 
@@ -1003,15 +1003,15 @@ export const StudentDashboard: React.FC = () => {
       </div>
 
       <Tabs defaultValue="team" className="w-full">
-        <TabsList>
-          <TabsTrigger value="team">Team Management</TabsTrigger>
-          <TabsTrigger value="projects">Project Selection</TabsTrigger>
-          <TabsTrigger value="materials">Project Materials</TabsTrigger>
-          <TabsTrigger value="feedback">Feedback & Reviews</TabsTrigger>
-          <TabsTrigger value="marks">My Marks</TabsTrigger>
-          <TabsTrigger value="progress">Progress Tracking</TabsTrigger>
-          <TabsTrigger value="email-progress">Email Progress</TabsTrigger>
-          <TabsTrigger value="notifications" className="relative">
+        <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto py-2 no-scrollbar">
+          <TabsTrigger value="team" className="whitespace-nowrap">Team Management</TabsTrigger>
+          <TabsTrigger value="projects" className="whitespace-nowrap">Project Selection</TabsTrigger>
+          <TabsTrigger value="materials" className="whitespace-nowrap">Project Materials</TabsTrigger>
+          <TabsTrigger value="feedback" className="whitespace-nowrap">Feedback & Reviews</TabsTrigger>
+          <TabsTrigger value="marks" className="whitespace-nowrap">My Marks</TabsTrigger>
+          <TabsTrigger value="progress" className="whitespace-nowrap">Progress Tracking</TabsTrigger>
+          <TabsTrigger value="email-progress" className="whitespace-nowrap">Email Progress</TabsTrigger>
+          <TabsTrigger value="notifications" className="relative whitespace-nowrap">
             <Bell className="h-4 w-4 mr-2" />
             Notifications
             {unreadCount > 0 && (
@@ -1023,11 +1023,11 @@ export const StudentDashboard: React.FC = () => {
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="email">Email Setup</TabsTrigger>
+          <TabsTrigger value="email" className="whitespace-nowrap">Email Setup</TabsTrigger>
         </TabsList>
 
         <TabsContent value="team" className="space-y-4">
-          {!myTeam ? (<Card><CardHeader><CardTitle>Create a Team</CardTitle><CardDescription>Start by creating your capstone project team</CardDescription></CardHeader><CardContent className="space-y-4"><div><Label htmlFor="teamName">Team Name</Label><Input id="teamName" value={newTeamName} onChange={(e) => setNewTeamName(e.target.value)} placeholder="Enter team name" /></div><Button onClick={handleCreateTeam} disabled={!newTeamName}><Plus className="h-4 w-4 mr-2" />Create Team</Button></CardContent></Card>) : (<div className="space-y-4"><Card><CardHeader><CardTitle className="flex items-center justify-between"><span>{myTeam.name}</span>{teamCapacity?.isFull && (<Badge variant="secondary">Team Full</Badge>)}</CardTitle><CardDescription>Team Number: <strong>{myTeam.teamNumber || 'T' + myTeam.id.slice(-6)}</strong> | Team Leader: {teamLeader?.name || 'Loading...'}</CardDescription></CardHeader><CardContent><div className="space-y-4"><div><div className="flex items-center justify-between mb-2"><h4 className="font-semibold">Team Members</h4><span className="text-sm text-muted-foreground">{teamMembers.length}/{teamCapacity?.max}</span></div>{teamCapacity && teamCapacity.available === 0 && (<Alert className="mb-3"><AlertCircle className="h-4 w-4" /><AlertDescription>Your team is at maximum capacity. No more members can be added.</AlertDescription></Alert>)}<div className="space-y-2">{teamMembers.length === 0 ? (<div className="text-sm text-muted-foreground py-2">Loading team members...</div>) : teamMembers.map((member) => (<div key={member.id} className="flex items-center justify-between p-3 border rounded-lg"><div className="flex items-center space-x-3"><UserIcon className="h-4 w-4 text-muted-foreground" /><div><div className="font-medium">{member.name}</div><div className="text-xs text-muted-foreground">{member.email}</div><div className="text-xs text-muted-foreground">Roll No: {member.rollNo}</div></div></div><div className="flex items-center space-x-2">{member.id === myTeam.leaderId && (<Badge variant="default">Leader</Badge>)}<Badge variant="outline">{member.role}</Badge></div></div>))}</div></div></div></CardContent></Card><InvitationManager team={myTeam} users={users} onInvitationSent={() => { setMessage('Invitation sent successfully!'); setTimeout(() => setMessage(''), 3000); }} /></div>)}
+          {!myTeam ? (<Card><CardHeader><CardTitle>Create a Team</CardTitle><CardDescription>Start by creating your capstone project team</CardDescription></CardHeader><CardContent className="space-y-4"><div><Label htmlFor="teamName">Team Name</Label><Input id="teamName" value={newTeamName} onChange={(e) => setNewTeamName(e.target.value)} placeholder="Enter team name" /></div><Button onClick={handleCreateTeam} disabled={!newTeamName}><Plus className="h-4 w-4 mr-2" />Create Team</Button></CardContent></Card>) : (<div className="space-y-4"><Card><CardHeader><CardTitle className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2"><span>{myTeam.name}</span>{teamCapacity?.isFull && (<Badge variant="secondary">Team Full</Badge>)}</CardTitle><CardDescription>Team Number: <strong>{myTeam.teamNumber || 'T' + myTeam.id.slice(-6)}</strong> | Team Leader: {teamLeader?.name || 'Loading...'}</CardDescription></CardHeader><CardContent><div className="space-y-4"><div><div className="flex items-center justify-between mb-2"><h4 className="font-semibold">Team Members</h4><span className="text-sm text-muted-foreground">{teamMembers.length}/{teamCapacity?.max}</span></div>{teamCapacity && teamCapacity.available === 0 && (<Alert className="mb-3"><AlertCircle className="h-4 w-4" /><AlertDescription>Your team is at maximum capacity. No more members can be added.</AlertDescription></Alert>)}<div className="space-y-2">{teamMembers.length === 0 ? (<div className="text-sm text-muted-foreground py-2">Loading team members...</div>) : teamMembers.map((member) => (<div key={member.id} className="flex flex-col md:flex-row items-start md:items-center justify-between p-3 border rounded-lg gap-3 md:gap-0"><div className="flex items-center space-x-3"><UserIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" /><div><div className="font-medium">{member.name}</div><div className="text-xs text-muted-foreground">{member.email}</div><div className="text-xs text-muted-foreground">Roll No: {member.rollNo}</div></div></div><div className="flex items-center space-x-2 w-full md:w-auto justify-end">{member.id === myTeam.leaderId && (<Badge variant="default">Leader</Badge>)}<Badge variant="outline">{member.role}</Badge></div></div>))}</div></div></div></CardContent></Card><InvitationManager team={myTeam} users={users} onInvitationSent={() => { setMessage('Invitation sent successfully!'); setTimeout(() => setMessage(''), 3000); }} /></div>)}
         </TabsContent>
 
         <TabsContent value="projects" className="space-y-4">
@@ -1098,7 +1098,7 @@ export const StudentDashboard: React.FC = () => {
                     {availableProjects.map(project => (
                       <div key={project.id} className="space-y-3">
                         <div className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                          <div className="flex items-start justify-between">
+                          <div className="flex flex-col md:flex-row items-start justify-between gap-4 md:gap-0">
                             <div className="flex-1">
                               <h3 className="font-semibold">{project.title}</h3>
                               <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
@@ -1108,6 +1108,7 @@ export const StudentDashboard: React.FC = () => {
                               size="sm"
                               onClick={() => setSelectedProject(project.id)}
                               variant={selectedProject === project.id ? "default" : "outline"}
+                              className="w-full md:w-auto"
                             >
                               {selectedProject === project.id ? "Selected" : "Select"}
                             </Button>
@@ -1205,15 +1206,15 @@ export const StudentDashboard: React.FC = () => {
                         {projectMaterials.map((material) => (
                           <div
                             key={material.id}
-                            className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                            className="flex flex-col md:flex-row items-start justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-3 md:gap-0"
                           >
-                            <div className="flex items-start gap-3 flex-1 min-w-0">
-                              <div className="mt-1">
+                            <div className="flex items-start gap-3 flex-1 min-w-0 w-full">
+                              <div className="mt-1 flex-shrink-0">
                                 {getMaterialIcon(material.type)}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h5 className="font-semibold truncate">{material.title}</h5>
+                                <div className="flex flex-wrap items-center gap-2 mb-1">
+                                  <h5 className="font-semibold truncate max-w-[200px]">{material.title}</h5>
                                   <Badge variant="secondary" className="text-xs">
                                     {material.type}
                                   </Badge>
@@ -1222,7 +1223,7 @@ export const StudentDashboard: React.FC = () => {
                                   href={material.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-sm text-blue-600 hover:underline flex items-center gap-1 truncate"
+                                  className="text-sm text-blue-600 hover:underline flex items-center gap-1 truncate max-w-full"
                                 >
                                   <span className="truncate">{material.url}</span>
                                   <ExternalLink className="h-3 w-3 flex-shrink-0" />
@@ -1237,9 +1238,10 @@ export const StudentDashboard: React.FC = () => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDeleteMaterial(material.id)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 w-full md:w-auto mt-2 md:mt-0"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4 mr-2 md:mr-0" />
+                                <span className="md:hidden">Delete</span>
                               </Button>
                             )}
                           </div>
@@ -1294,9 +1296,9 @@ export const StudentDashboard: React.FC = () => {
                           key={fb.id}
                           className="p-4 border rounded-lg bg-blue-50 border-blue-200"
                         >
-                          <div className="flex items-start justify-between mb-2">
+                          <div className="flex flex-col md:flex-row items-start justify-between mb-2 gap-2 md:gap-0">
                             <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold">
+                              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                                 {fb.addedByName.charAt(0).toUpperCase()}
                               </div>
                               <div>
@@ -1352,17 +1354,17 @@ export const StudentDashboard: React.FC = () => {
                           <div
                             key={schedule.id}
                             className={`p-4 border rounded-lg ${schedule.status === 'completed'
-                                ? 'bg-green-50 border-green-200'
-                                : schedule.status === 'cancelled'
-                                  ? 'bg-gray-50 border-gray-300 opacity-60'
-                                  : isToday
-                                    ? 'bg-orange-50 border-orange-300'
-                                    : isPast
-                                      ? 'bg-gray-50 border-gray-200'
-                                      : 'bg-white border-gray-200'
+                              ? 'bg-green-50 border-green-200'
+                              : schedule.status === 'cancelled'
+                                ? 'bg-gray-50 border-gray-300 opacity-60'
+                                : isToday
+                                  ? 'bg-orange-50 border-orange-300'
+                                  : isPast
+                                    ? 'bg-gray-50 border-gray-200'
+                                    : 'bg-white border-gray-200'
                               }`}
                           >
-                            <div className="flex items-start justify-between mb-2">
+                            <div className="flex flex-col md:flex-row items-start justify-between mb-2 gap-2 md:gap-0">
                               <h4 className="font-semibold text-sm">{schedule.title}</h4>
                               <Badge
                                 variant={

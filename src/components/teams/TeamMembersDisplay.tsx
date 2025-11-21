@@ -36,27 +36,27 @@ export const TeamMembersDisplay: React.FC<TeamMembersDisplayProps> = ({
                     {/* Team Leader */}
                     {teamLeader && (
                         <div className="border rounded-lg p-4 bg-gradient-to-r from-blue-50 to-indigo-50">
-                            <div className="flex items-center space-x-3">
-                                <Avatar className="h-10 w-10">
+                            <div className="flex items-start space-x-3">
+                                <Avatar className="h-10 w-10 flex-shrink-0">
                                     <AvatarFallback className="bg-blue-100 text-blue-600">
                                         <User className="h-5 w-5" />
                                     </AvatarFallback>
                                 </Avatar>
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <h4 className="font-semibold">{teamLeader.name}</h4>
-                                        <Badge variant="default" className="bg-blue-100 text-blue-800">
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <h4 className="font-semibold truncate">{teamLeader.name}</h4>
+                                        <Badge variant="default" className="bg-blue-100 text-blue-800 whitespace-nowrap">
                                             Team Leader
                                         </Badge>
                                     </div>
-                                    <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                                        <span className="flex items-center gap-1">
-                                            <Mail className="h-3 w-3" />
-                                            {teamLeader.email}
+                                    <div className="flex flex-col gap-1 text-sm text-muted-foreground mt-1">
+                                        <span className="flex items-center gap-1 truncate">
+                                            <Mail className="h-3 w-3 flex-shrink-0" />
+                                            <span className="truncate">{teamLeader.email}</span>
                                         </span>
                                         {teamLeader.rollNo && (
                                             <span className="flex items-center gap-1">
-                                                <GraduationCap className="h-3 w-3" />
+                                                <GraduationCap className="h-3 w-3 flex-shrink-0" />
                                                 {teamLeader.rollNo}
                                             </span>
                                         )}
@@ -71,29 +71,29 @@ export const TeamMembersDisplay: React.FC<TeamMembersDisplayProps> = ({
                         .filter(member => member.id !== team.leaderId)
                         .map((member) => (
                             <div key={member.id} className="border rounded-lg p-4">
-                                <div className="flex items-center space-x-3">
-                                    <Avatar className="h-10 w-10">
+                                <div className="flex items-start space-x-3">
+                                    <Avatar className="h-10 w-10 flex-shrink-0">
                                         <AvatarFallback className="bg-green-100 text-green-600">
                                             <User className="h-5 w-5" />
                                         </AvatarFallback>
                                     </Avatar>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <h4 className="font-semibold">{member.name}</h4>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <h4 className="font-semibold truncate">{member.name}</h4>
                                             {member.id === currentUserId && (
-                                                <Badge variant="outline" className="bg-green-50 text-green-700">
+                                                <Badge variant="outline" className="bg-green-50 text-green-700 whitespace-nowrap">
                                                     You
                                                 </Badge>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                                            <span className="flex items-center gap-1">
-                                                <Mail className="h-3 w-3" />
-                                                {member.email}
+                                        <div className="flex flex-col gap-1 text-sm text-muted-foreground mt-1">
+                                            <span className="flex items-center gap-1 truncate">
+                                                <Mail className="h-3 w-3 flex-shrink-0" />
+                                                <span className="truncate">{member.email}</span>
                                             </span>
                                             {member.rollNo && (
                                                 <span className="flex items-center gap-1">
-                                                    <GraduationCap className="h-3 w-3" />
+                                                    <GraduationCap className="h-3 w-3 flex-shrink-0" />
                                                     {member.rollNo}
                                                 </span>
                                             )}

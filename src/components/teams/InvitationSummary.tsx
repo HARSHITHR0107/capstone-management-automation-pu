@@ -62,21 +62,21 @@ export const InvitationSummary: React.FC<InvitationSummaryProps> = ({
                 <CardDescription>{description}</CardDescription>
 
                 {/* Stats Summary */}
-                <div className="flex gap-3 mt-4">
+                <div className="flex flex-wrap gap-3 mt-4">
                     {stats.pending > 0 && (
-                        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 whitespace-nowrap">
                             <Clock className="h-3 w-3 mr-1" />
                             {stats.pending} Pending
                         </Badge>
                     )}
                     {stats.accepted > 0 && (
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 whitespace-nowrap">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             {stats.accepted} Accepted
                         </Badge>
                     )}
                     {stats.rejected > 0 && (
-                        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 whitespace-nowrap">
                             <XCircle className="h-3 w-3 mr-1" />
                             {stats.rejected} Rejected
                         </Badge>
@@ -97,28 +97,28 @@ export const InvitationSummary: React.FC<InvitationSummaryProps> = ({
                             }}
                         >
                             {/* Header */}
-                            <div className="flex items-start justify-between mb-3">
-                                <div className="flex-1">
+                            <div className="flex flex-col md:flex-row items-start justify-between mb-3 gap-2 md:gap-0">
+                                <div className="flex-1 min-w-0 w-full">
                                     <div className="flex items-center gap-2 mb-1">
-                                        {invitation.status === 'pending' && <Clock className="h-4 w-4 text-yellow-500" />}
-                                        {invitation.status === 'accepted' && <CheckCircle className="h-4 w-4 text-green-500" />}
-                                        {invitation.status === 'rejected' && <XCircle className="h-4 w-4 text-red-500" />}
-                                        <h4 className="font-semibold text-lg">{invitation.invitedUserName}</h4>
+                                        {invitation.status === 'pending' && <Clock className="h-4 w-4 text-yellow-500 flex-shrink-0" />}
+                                        {invitation.status === 'accepted' && <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />}
+                                        {invitation.status === 'rejected' && <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />}
+                                        <h4 className="font-semibold text-lg truncate">{invitation.invitedUserName}</h4>
                                     </div>
 
                                     <div className="space-y-1 text-sm text-muted-foreground">
-                                        <p className="flex items-center gap-2">
-                                            <Mail className="h-3 w-3" />
-                                            <span className="font-medium">{invitation.invitedUserEmail}</span>
+                                        <p className="flex items-center gap-2 truncate">
+                                            <Mail className="h-3 w-3 flex-shrink-0" />
+                                            <span className="font-medium truncate">{invitation.invitedUserEmail}</span>
                                         </p>
                                     </div>
                                 </div>
 
                                 <Badge
                                     className={
-                                        invitation.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                        (invitation.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                                             invitation.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                                                'bg-red-100 text-red-800'
+                                                'bg-red-100 text-red-800') + " mt-2 md:mt-0 self-start md:self-auto"
                                     }
                                 >
                                     {invitation.status.toUpperCase()}
@@ -126,14 +126,14 @@ export const InvitationSummary: React.FC<InvitationSummaryProps> = ({
                             </div>
 
                             {/* Details Grid */}
-                            <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-3">
                                 <div>
                                     <span className="text-muted-foreground">Team:</span>
-                                    <p className="font-medium">{invitation.teamName}</p>
+                                    <p className="font-medium truncate">{invitation.teamName}</p>
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground">Sent by:</span>
-                                    <p className="font-medium">{invitation.inviterName}</p>
+                                    <p className="font-medium truncate">{invitation.inviterName}</p>
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground">Date:</span>
@@ -144,7 +144,7 @@ export const InvitationSummary: React.FC<InvitationSummaryProps> = ({
                                     <p className="font-medium">{invitation.createdAt.toLocaleTimeString()}</p>
                                 </div>
                                 {invitation.teamNumber && (
-                                    <div className="col-span-2">
+                                    <div className="md:col-span-2">
                                         <span className="text-muted-foreground">Team Number:</span>
                                         <p className="font-medium">#{invitation.teamNumber}</p>
                                     </div>
@@ -154,9 +154,9 @@ export const InvitationSummary: React.FC<InvitationSummaryProps> = ({
                             {/* Status Message */}
                             {invitation.status === 'pending' && (
                                 <Alert className="bg-yellow-50 border-yellow-200">
-                                    <Clock className="h-4 w-4 text-yellow-600" />
-                                    <AlertDescription className="text-yellow-800">
-                                        <strong>Waiting for response</strong> - The invitation has been sent to {invitation.invitedUserEmail}.
+                                    <Clock className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+                                    <AlertDescription className="text-yellow-800 min-w-0">
+                                        <strong>Waiting for response</strong> - The invitation has been sent to <span className="break-all font-medium">{invitation.invitedUserEmail}</span>.
                                         They need to check their email and accept the invitation.
                                     </AlertDescription>
                                 </Alert>
@@ -182,12 +182,12 @@ export const InvitationSummary: React.FC<InvitationSummaryProps> = ({
 
                             {/* Actions */}
                             {invitation.status === 'pending' && (
-                                <div className="flex gap-2 mt-3">
+                                <div className="flex flex-col sm:flex-row gap-2 mt-3">
                                     <Button
                                         size="sm"
                                         variant="outline"
                                         onClick={() => copyInvitationLink(invitation.id, invitation.teamId)}
-                                        className="flex-1"
+                                        className="flex-1 w-full sm:w-auto"
                                     >
                                         <Copy className="h-4 w-4 mr-2" />
                                         Copy Link
@@ -199,7 +199,7 @@ export const InvitationSummary: React.FC<InvitationSummaryProps> = ({
                                             const link = `${window.location.origin}/invitation/${invitation.teamId}/${invitation.id}`;
                                             window.open(link, '_blank');
                                         }}
-                                        className="flex-1"
+                                        className="flex-1 w-full sm:w-auto"
                                     >
                                         <ExternalLink className="h-4 w-4 mr-2" />
                                         Open Link

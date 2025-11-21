@@ -75,10 +75,10 @@ export const InvitationManager: React.FC<InvitationManagerProps> = ({
             invitedUserName = nameParts
                 .map(part => part.charAt(0).toUpperCase() + part.slice(1))
                 .join(' ') || 'Student';
-            
+
             // Create a temporary ID based on email for tracking
             invitedUserId = `email_${normalizedEmail.replace(/[^a-z0-9]/g, '_')}`;
-            
+
             console.log('📧 User not found in system, sending email-only invitation to:', normalizedEmail);
         } else {
             // Check if user is already a team member
@@ -129,14 +129,14 @@ export const InvitationManager: React.FC<InvitationManagerProps> = ({
             teamName: invitationData.teamName,
             teamNumber: invitationData.teamNumber
         });
-        
+
         const result = await sendInvitation(invitationData);
-        
+
         console.log('📤 Invitation Result:', result);
 
         if (result.success) {
             // Show detailed success message
-            const successMessage = invitedUser 
+            const successMessage = invitedUser
                 ? `✅ Invitation sent successfully! Email has been sent to ${invitedUser.name}`
                 : `✅ Invitation sent successfully! Email has been sent to ${normalizedEmail}. The student will receive an invitation email and can register to accept.`;
             toast.success(successMessage, { duration: 5000 });
@@ -361,14 +361,14 @@ export const InvitationManager: React.FC<InvitationManagerProps> = ({
                                         <div key={invitation.id} className="space-y-3">
                                             {/* Invitation Info */}
                                             <div className="p-4 border-2 rounded-lg bg-card hover:shadow-md transition-shadow">
-                                                <div className="flex items-start justify-between mb-3">
-                                                    <div className="flex items-start space-x-3 flex-1">
+                                                <div className="flex flex-col md:flex-row items-start justify-between mb-3 gap-4 md:gap-0">
+                                                    <div className="flex items-start space-x-3 flex-1 w-full">
                                                         {getStatusIcon(invitation.status)}
-                                                        <div className="flex-1">
-                                                            <p className="font-semibold text-lg">{invitation.invitedUserName}</p>
-                                                            <p className="text-sm text-muted-foreground flex items-center gap-2">
-                                                                <Mail className="h-3 w-3" />
-                                                                {invitation.invitedUserEmail}
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-semibold text-lg truncate">{invitation.invitedUserName}</p>
+                                                            <p className="text-sm text-muted-foreground flex items-center gap-2 truncate">
+                                                                <Mail className="h-3 w-3 flex-shrink-0" />
+                                                                <span className="truncate">{invitation.invitedUserEmail}</span>
                                                             </p>
                                                             <div className="flex flex-wrap gap-2 mt-2">
                                                                 <Badge variant="outline" className="text-xs">
@@ -387,7 +387,7 @@ export const InvitationManager: React.FC<InvitationManagerProps> = ({
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="flex flex-col items-end space-y-2">
+                                                    <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start w-full md:w-auto gap-2 md:gap-2 mt-2 md:mt-0">
                                                         <Badge className={getStatusColor(invitation.status) + " text-xs font-semibold"}>
                                                             {invitation.status.toUpperCase()}
                                                         </Badge>
@@ -411,11 +411,11 @@ export const InvitationManager: React.FC<InvitationManagerProps> = ({
                                                 {invitation.status === 'pending' && (
                                                     <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                                                         <p className="text-sm text-yellow-800 flex items-center gap-2">
-                                                            <Clock className="h-4 w-4" />
+                                                            <Clock className="h-4 w-4 flex-shrink-0" />
                                                             <span className="font-medium">Waiting for response...</span>
                                                         </p>
                                                         <p className="text-xs text-yellow-700 mt-1">
-                                                            The invitation email has been sent to {invitation.invitedUserEmail}. They need to check their email and accept the invitation.
+                                                            The invitation email has been sent to <span className="break-all font-medium">{invitation.invitedUserEmail}</span>. They need to check their email and accept the invitation.
                                                         </p>
                                                     </div>
                                                 )}
@@ -499,7 +499,7 @@ export const InvitationManager: React.FC<InvitationManagerProps> = ({
                                             key={invitation.id}
                                             className="p-4 border rounded-lg space-y-3"
                                         >
-                                            <div className="flex items-center justify-between">
+                                            <div className="flex flex-col md:flex-row items-start justify-between gap-2 md:gap-0">
                                                 <div>
                                                     <p className="font-medium">Invitation to join {invitation.teamName}</p>
                                                     <p className="text-sm text-muted-foreground">
@@ -509,15 +509,16 @@ export const InvitationManager: React.FC<InvitationManagerProps> = ({
                                                         Received {invitation.createdAt.toLocaleDateString()}
                                                     </p>
                                                 </div>
-                                                <Badge className={getStatusColor(invitation.status)}>
+                                                <Badge className={getStatusColor(invitation.status) + " mt-2 md:mt-0"}>
                                                     {invitation.status}
                                                 </Badge>
                                             </div>
-                                            <div className="flex space-x-2">
+                                            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-2">
                                                 <Button
                                                     size="sm"
                                                     onClick={() => handleAcceptInvitation(invitation.id)}
                                                     disabled={isLoading}
+                                                    className="w-full sm:w-auto"
                                                 >
                                                     <Check className="h-4 w-4 mr-2" />
                                                     Accept
@@ -527,6 +528,7 @@ export const InvitationManager: React.FC<InvitationManagerProps> = ({
                                                     variant="outline"
                                                     onClick={() => handleRejectInvitation(invitation.id)}
                                                     disabled={isLoading}
+                                                    className="w-full sm:w-auto"
                                                 >
                                                     <X className="h-4 w-4 mr-2" />
                                                     Reject
