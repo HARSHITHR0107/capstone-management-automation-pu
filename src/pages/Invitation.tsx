@@ -33,6 +33,13 @@ const InvitationPage: React.FC = () => {
                 return;
             }
 
+            // If user is not logged in, don't try to load invitation yet
+            // The component will show login/signup prompt instead
+            if (!user) {
+                setIsLoading(false);
+                return;
+            }
+
             try {
                 // Mark link as clicked when invitation page loads
                 const { realTimeProgressService } = await import('@/lib/realTimeProgressService');
@@ -53,7 +60,7 @@ const InvitationPage: React.FC = () => {
         };
 
         loadInvitation();
-    }, [invitationId, getInvitation]);
+    }, [invitationId, getInvitation, user]);
 
     // Auto-execute action if provided in URL (only once)
     useEffect(() => {
@@ -170,21 +177,21 @@ const InvitationPage: React.FC = () => {
             <div className="min-h-screen flex items-center justify-center p-4">
                 <Card className="w-full max-w-md">
                     <CardHeader>
-                        <CardTitle className="text-center">🔑 Login or Create Account</CardTitle>
+                        <CardTitle className="text-center">🎓 Team Invitation Received!</CardTitle>
                         <CardDescription className="text-center">
-                            You need to be logged in to respond to this invitation
+                            Please login or create an account to view and respond to this invitation
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <Alert className="bg-blue-50 border-blue-200">
                             <AlertDescription className="text-blue-800">
-                                <strong>🎓 Team Invitation from {invitation?.inviterName || 'a team'}</strong>
-                                <p className="mt-2">If you don't have an account, you'll create one first. Then you can accept or decline this invitation.</p>
+                                <strong>✅ Your invitation is valid and waiting for you!</strong>
+                                <p className="mt-2">After you login or create an account, you'll be automatically redirected back to view the invitation details and can choose to accept or decline.</p>
                             </AlertDescription>
                         </Alert>
                         <div className="space-y-2">
                             <Button onClick={() => navigate('/login')} className="w-full" size="lg">
-                                ✅ Login to Your Account
+                                🔑 Login to Your Account
                             </Button>
                             <Button onClick={() => navigate('/signup')} variant="outline" className="w-full" size="lg">
                                 🆕 Create New Account
