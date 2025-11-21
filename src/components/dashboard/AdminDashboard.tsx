@@ -321,10 +321,10 @@ export const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="p-4 md:p-6 space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <Button onClick={fetchData} variant="outline">
+        <Button onClick={fetchData} variant="outline" className="w-full md:w-auto">
           Refresh Data
         </Button>
       </div>
@@ -373,16 +373,16 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       <Tabs defaultValue="upload" className="w-full">
-        <TabsList>
-          <TabsTrigger value="upload">Excel Upload</TabsTrigger>
-          <TabsTrigger value="notifications">
+        <TabsList className="w-full justify-start overflow-x-auto flex-nowrap no-scrollbar">
+          <TabsTrigger value="upload" className="whitespace-nowrap">Excel Upload</TabsTrigger>
+          <TabsTrigger value="notifications" className="whitespace-nowrap">
             <Bell className="h-4 w-4 mr-2" />
             Notifications ({notifications.length})
           </TabsTrigger>
-          <TabsTrigger value="students">Students ({stats.totalStudents})</TabsTrigger>
-          <TabsTrigger value="faculty">Faculty ({stats.totalFaculty})</TabsTrigger>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
-          <TabsTrigger value="teams">Teams</TabsTrigger>
+          <TabsTrigger value="students" className="whitespace-nowrap">Students ({stats.totalStudents})</TabsTrigger>
+          <TabsTrigger value="faculty" className="whitespace-nowrap">Faculty ({stats.totalFaculty})</TabsTrigger>
+          <TabsTrigger value="projects" className="whitespace-nowrap">Projects</TabsTrigger>
+          <TabsTrigger value="teams" className="whitespace-nowrap">Teams</TabsTrigger>
         </TabsList>
 
         <TabsContent value="upload" className="space-y-4">
@@ -392,7 +392,7 @@ export const AdminDashboard: React.FC = () => {
         <TabsContent value="notifications" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Bell className="h-5 w-5" />
@@ -404,7 +404,7 @@ export const AdminDashboard: React.FC = () => {
                 </div>
                 <Dialog open={notificationDialogOpen} onOpenChange={setNotificationDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button>
+                    <Button className="w-full md:w-auto">
                       <Send className="h-4 w-4 mr-2" />
                       Send Notification
                     </Button>
@@ -665,9 +665,9 @@ export const AdminDashboard: React.FC = () => {
                 <div className="space-y-4">
                   {faculty.map((member) => (
                     <Card key={member.id} className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2 flex-1">
-                          <div className="flex items-center gap-2">
+                      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+                        <div className="space-y-2 flex-1 w-full">
+                          <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-lg font-semibold">
                               {member.title} {member.name}
                             </h3>
@@ -679,28 +679,28 @@ export const AdminDashboard: React.FC = () => {
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                            <div className="flex items-center gap-2">
-                              <Mail className="h-4 w-4 text-muted-foreground" />
-                              <span>{member.email}</span>
+                            <div className="flex items-center gap-2 truncate">
+                              <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              <span className="truncate">{member.email}</span>
                             </div>
 
                             {member.contactNumber && (
                               <div className="flex items-center gap-2">
-                                <Phone className="h-4 w-4 text-muted-foreground" />
+                                <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                 <span>{member.contactNumber}</span>
                               </div>
                             )}
 
                             {member.designation && (
                               <div className="flex items-center gap-2">
-                                <Briefcase className="h-4 w-4 text-muted-foreground" />
+                                <Briefcase className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                 <span>{member.designation}</span>
                               </div>
                             )}
 
                             {member.school && (
                               <div className="flex items-center gap-2">
-                                <BookOpen className="h-4 w-4 text-muted-foreground" />
+                                <BookOpen className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                 <span>{member.school}</span>
                               </div>
                             )}
@@ -717,11 +717,12 @@ export const AdminDashboard: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 w-full md:w-auto">
                           {!member.isVerified && (
                             <Button
                               size="sm"
                               onClick={() => handleVerifyUser(member.id)}
+                              className="flex-1 md:flex-none"
                             >
                               Verify
                             </Button>
@@ -730,6 +731,7 @@ export const AdminDashboard: React.FC = () => {
                             size="sm"
                             variant="destructive"
                             onClick={() => handleDeleteUser(member.id)}
+                            className="flex-1 md:flex-none"
                           >
                             Delete
                           </Button>
@@ -746,14 +748,14 @@ export const AdminDashboard: React.FC = () => {
         <TabsContent value="projects" className="space-y-4">
           <div className="space-y-4">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0">
                 <div>
                   <CardTitle>Add New Project</CardTitle>
                   <CardDescription>Create a new capstone project manually</CardDescription>
                 </div>
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button>Add New Project</Button>
+                    <Button className="w-full md:w-auto">Add New Project</Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>

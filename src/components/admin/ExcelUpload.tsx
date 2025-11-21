@@ -60,7 +60,7 @@ export const ExcelUpload: React.FC<ExcelUploadProps> = ({ onDataProcessed }) => 
       const processedData = processExcelData(data, selectedType);
       console.log('✅ Processed data:', processedData);
       console.log('📊 Total processed:', processedData.length);
-      
+
       // Validate processed data
       const validData = processedData.filter((item: any) => {
         if (selectedType === 'faculty') {
@@ -141,7 +141,7 @@ export const ExcelUpload: React.FC<ExcelUploadProps> = ({ onDataProcessed }) => 
         const columnNames = Object.keys(firstRow);
         console.log('🔍 Found column names in Excel:', columnNames);
         console.log('🔍 Column names with lengths:', columnNames.map(name => `"${name}" (length: ${name.length})`));
-        
+
         // Create a normalized key mapping
         const normalizeKey = (key: string) => key.trim().toLowerCase().replace(/\s+/g, '');
         const keyMap: any = {};
@@ -154,7 +154,7 @@ export const ExcelUpload: React.FC<ExcelUploadProps> = ({ onDataProcessed }) => 
         return data
           .map((row, index) => {
             console.log(`\n📝 Processing row ${index + 1}:`, row);
-            
+
             // Find the actual column names using normalized matching
             const findValue = (possibleNames: string[]) => {
               for (const name of possibleNames) {
@@ -180,10 +180,10 @@ export const ExcelUpload: React.FC<ExcelUploadProps> = ({ onDataProcessed }) => 
 
             // Skip if name, rollNo or email is missing
             if (!name || !rollNo || !email) {
-              console.log(`⚠️ SKIPPING row ${index + 1} - missing required fields:`, { 
-                hasName: !!name, 
-                hasRollNo: !!rollNo, 
-                hasEmail: !!email 
+              console.log(`⚠️ SKIPPING row ${index + 1} - missing required fields:`, {
+                hasName: !!name,
+                hasRollNo: !!rollNo,
+                hasEmail: !!email
               });
               return null;
             }
@@ -207,9 +207,9 @@ export const ExcelUpload: React.FC<ExcelUploadProps> = ({ onDataProcessed }) => 
           })
           .filter((student): student is StudentData => {
             const isValid = student !== null &&
-                   student.name.trim() !== '' &&
-                   student.email.trim() !== '' &&
-                   student.rollNo.trim() !== '';
+              student.name.trim() !== '' &&
+              student.email.trim() !== '' &&
+              student.rollNo.trim() !== '';
             if (!isValid && student) {
               console.log('⚠️ Filtered out invalid student:', student);
             }
@@ -227,7 +227,7 @@ export const ExcelUpload: React.FC<ExcelUploadProps> = ({ onDataProcessed }) => 
             const designation = row['Designation']?.trim() || row['designation']?.trim() || '';
             const employeeId = row['Employee ID']?.trim() || row['employeeId']?.trim() || '';
             const contactNumber = row['Contact number']?.toString()?.trim() || row['contactNumber']?.toString()?.trim() || '';
-            
+
             // Determine maxTeams based on designation
             let maxTeams = 3;
             const designationLower = designation.toLowerCase();
@@ -263,7 +263,7 @@ export const ExcelUpload: React.FC<ExcelUploadProps> = ({ onDataProcessed }) => 
           })
           .filter((faculty) => {
             return faculty.name && faculty.name.trim() !== '' &&
-                   faculty.email && faculty.email.trim() !== '';
+              faculty.email && faculty.email.trim() !== '';
           });
 
       case 'projects':
@@ -378,7 +378,7 @@ export const ExcelUpload: React.FC<ExcelUploadProps> = ({ onDataProcessed }) => 
         {/* Data Type Selection */}
         <div className="space-y-2">
           <label className="text-sm font-medium">Select Data Type:</label>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {(['students', 'faculty', 'projects'] as const).map((type) => (
               <Button
                 key={type}
@@ -386,6 +386,7 @@ export const ExcelUpload: React.FC<ExcelUploadProps> = ({ onDataProcessed }) => 
                 size="sm"
                 onClick={() => setSelectedType(type)}
                 disabled={isUploading}
+                className="flex-1 sm:flex-none"
               >
                 {type.charAt(0).toUpperCase() + type.slice(1)}
               </Button>
