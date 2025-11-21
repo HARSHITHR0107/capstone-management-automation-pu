@@ -12,47 +12,16 @@ import { createTeamInFirestore, updateUserTeamId, getTeamCapacity, updateUserPro
 import { User, Project, Team } from '@/types/user';
 import { collection, getDocs, onSnapshot, doc, getDoc, updateDoc, arrayUnion, arrayRemove, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Users, BookOpen, Plus, Mail, AlertCircle, User as UserIcon, GraduationCap, Phone, Link as LinkIcon, Github, FolderOpen, Trash2, ExternalLink, MessageSquare, Calendar, Clock, MapPin } from 'lucide-react';
+import { Users, BookOpen, Plus, Mail, AlertCircle, User as UserIcon, GraduationCap, Phone, Link as LinkIcon, Github, FolderOpen, Trash2, ExternalLink, MessageSquare, Calendar, Clock, MapPin, Bell } from 'lucide-react';
 import { InvitationManager } from '@/components/teams/InvitationManager';
 import { requestNotificationPermission } from '@/lib/emailService';
 import { EmailSetupStatus } from '@/components/ui/EmailSetupStatus';
 import { NotificationDisplay } from '@/components/notifications/NotificationDisplay';
+import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import { EmailProgressDashboard } from '@/components/email/EmailProgressDashboard';
 import { EmailDiagnostics } from '@/components/ui/EmailDiagnostics';
 
-interface ProjectMaterial {
-  id: string;
-  url: string;
-  title: string;
-  type: 'github' | 'drive' | 'other';
-  addedBy: string;
-  addedByName: string;
-  addedAt: Date;
-}
-
-interface Feedback {
-  id: string;
-  content: string;
-  addedBy: string;
-  addedByName: string;
-  addedAt: Date;
-  type: 'guide' | 'reviewer';
-}
-
-interface ReviewSchedule {
-  id: string;
-  title: string;
-  description?: string;
-  date: Date;
-  time?: string;
-  location?: string;
-  addedBy: string;
-  addedByName: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
-  addedAt: Date;
-}
-
-// NEW COMPONENT: Marks Tab
+// Marks Tab Component
 const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }) => {
   const [evaluations, setEvaluations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,11 +43,11 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
       try {
         setLoading(true);
         const teamDoc = await getDoc(doc(db, 'teams', myTeam.id));
-        
+
         if (teamDoc.exists()) {
           const data = teamDoc.data();
           const allEvaluations = data.evaluations || [];
-          
+
           const myEvaluations = allEvaluations
             .filter((e: any) => e.memberId === user.id)
             .map((e: any) => ({
@@ -86,7 +55,7 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
               evaluatedAt: e.evaluatedAt?.toDate ? e.evaluatedAt.toDate() : new Date(e.evaluatedAt)
             }))
             .sort((a: any, b: any) => a.reviewPhase - b.reviewPhase);
-          
+
           setEvaluations(myEvaluations);
         }
       } catch (error) {
@@ -105,7 +74,7 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
           if (snapshot.exists()) {
             const data = snapshot.data();
             const allEvaluations = data.evaluations || [];
-            
+
             const myEvaluations = allEvaluations
               .filter((e: any) => e.memberId === user.id)
               .map((e: any) => ({
@@ -113,12 +82,11 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
                 evaluatedAt: e.evaluatedAt?.toDate ? e.evaluatedAt.toDate() : new Date(e.evaluatedAt)
               }))
               .sort((a: any, b: any) => a.reviewPhase - b.reviewPhase);
-            
+
             setEvaluations(myEvaluations);
           }
         }
       );
-
       return () => unsubscribe();
     }
   }, [myTeam?.id, user?.id]);
@@ -164,7 +132,6 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
             <p className="text-xs text-muted-foreground">out of {totalMaxMarks} marks</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Percentage</CardTitle>
@@ -179,7 +146,6 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
             </p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Completed</CardTitle>
@@ -190,7 +156,6 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
             <p className="text-xs text-muted-foreground">of {reviewPhases.length} reviews</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending</CardTitle>
@@ -216,12 +181,11 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3">
               <div
-                className={`h-3 rounded-full transition-all ${
-                  percentage >= 90 ? 'bg-green-500' :
-                  percentage >= 70 ? 'bg-blue-500' :
-                  percentage >= 50 ? 'bg-yellow-500' :
-                  'bg-red-500'
-                }`}
+                className={`h-3 rounded-full transition-all ${percentage >= 90 ? 'bg-green-500' :
+                    percentage >= 70 ? 'bg-blue-500' :
+                      percentage >= 50 ? 'bg-yellow-500' :
+                        'bg-red-500'
+                  }`}
                 style={{ width: `${(completedReviews / reviewPhases.length) * 100}%` }}
               />
             </div>
@@ -253,9 +217,8 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
               return (
                 <div
                   key={phase.phase}
-                  className={`p-4 border rounded-lg ${
-                    isEvaluated ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200' : 'bg-gray-50 border-gray-200'
-                  }`}
+                  className={`p-4 border rounded-lg ${isEvaluated ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200' : 'bg-gray-50 border-gray-200'
+                    }`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -291,23 +254,20 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
                     <>
                       <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
                         <div
-                          className={`h-2 rounded-full transition-all ${
-                            phasePercentage >= 90 ? 'bg-green-500' :
-                            phasePercentage >= 70 ? 'bg-blue-500' :
-                            phasePercentage >= 50 ? 'bg-yellow-500' :
-                            'bg-red-500'
-                          }`}
+                          className={`h-2 rounded-full transition-all ${phasePercentage >= 90 ? 'bg-green-500' :
+                              phasePercentage >= 70 ? 'bg-blue-500' :
+                                phasePercentage >= 50 ? 'bg-yellow-500' :
+                                  'bg-red-500'
+                            }`}
                           style={{ width: `${Math.min(phasePercentage, 100)}%` }}
                         />
                       </div>
-
                       {evaluation.comments && (
                         <div className="mt-3 p-3 bg-white border border-blue-200 rounded">
                           <p className="text-xs font-semibold text-blue-900 mb-1">Faculty Comments:</p>
                           <p className="text-sm text-gray-700 whitespace-pre-wrap">{evaluation.comments}</p>
                         </div>
                       )}
-
                       <div className="mt-3 pt-3 border-t border-blue-200">
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>Evaluated by: {evaluation.evaluatedByName}</span>
@@ -376,7 +336,6 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
                   </div>
                 </div>
               )}
-
               <div className="pt-3 border-t border-purple-200">
                 <p className="text-sm font-medium mb-2">Next Steps:</p>
                 <ul className="text-sm space-y-1 text-muted-foreground ml-4">
@@ -405,8 +364,41 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
   );
 };
 
+interface ProjectMaterial {
+  id: string;
+  url: string;
+  title: string;
+  type: 'github' | 'drive' | 'other';
+  addedBy: string;
+  addedByName: string;
+  addedAt: Date;
+}
+
+interface Feedback {
+  id: string;
+  content: string;
+  addedBy: string;
+  addedByName: string;
+  addedAt: Date;
+  type: 'guide' | 'reviewer';
+}
+
+interface ReviewSchedule {
+  id: string;
+  title: string;
+  description?: string;
+  date: Date;
+  time?: string;
+  location?: string;
+  addedBy: string;
+  addedByName: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  addedAt: Date;
+}
+
 export const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { unreadCount } = useUnreadNotifications();
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -417,13 +409,13 @@ export const StudentDashboard: React.FC = () => {
   const [message, setMessage] = useState('');
   const [teamProjectSelections, setTeamProjectSelections] = useState<Record<string, string | null>>({});
   const [facultyGuide, setFacultyGuide] = useState<User | null>(null);
-  
+
   // Project materials state
   const [projectMaterials, setProjectMaterials] = useState<ProjectMaterial[]>([]);
   const [newMaterialUrl, setNewMaterialUrl] = useState('');
   const [newMaterialTitle, setNewMaterialTitle] = useState('');
   const [isAddingMaterial, setIsAddingMaterial] = useState(false);
-  
+
   // Feedback and schedule state
   const [teamFeedback, setTeamFeedback] = useState<Feedback[]>([]);
   const [reviewSchedules, setReviewSchedules] = useState<ReviewSchedule[]>([]);
@@ -437,7 +429,7 @@ export const StudentDashboard: React.FC = () => {
       (snapshot) => {
         console.log('📡 Users updated, processing changes...');
         const firebaseUsers: User[] = [];
-        
+
         snapshot.forEach((doc) => {
           const data = doc.data();
           firebaseUsers.push({
@@ -453,14 +445,14 @@ export const StudentDashboard: React.FC = () => {
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
           });
         });
-        
+
         console.log(`✅ Received ${firebaseUsers.length} users from Firestore`);
         const localUsers = getUsers();
         const userMap = new Map<string, User>();
         localUsers.forEach(u => userMap.set(u.id, u));
         firebaseUsers.forEach(u => userMap.set(u.id, u));
         const allUsers = Array.from(userMap.values());
-        
+
         setUsers(allUsers);
         requestNotificationPermission();
       },
@@ -486,7 +478,7 @@ export const StudentDashboard: React.FC = () => {
       (snapshot) => {
         console.log('📡 Projects updated, processing changes...');
         const updatedProjects: Project[] = [];
-        
+
         snapshot.forEach((doc) => {
           const data = doc.data();
           updatedProjects.push({
@@ -498,7 +490,7 @@ export const StudentDashboard: React.FC = () => {
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
           });
         });
-        
+
         console.log(`✅ Received ${updatedProjects.length} projects from Firestore`);
         setProjects(updatedProjects);
       },
@@ -525,7 +517,7 @@ export const StudentDashboard: React.FC = () => {
       (snapshot) => {
         console.log('📡 Teams updated, processing changes...');
         const updatedTeams: Team[] = [];
-        
+
         snapshot.forEach((doc) => {
           const data = doc.data();
           updatedTeams.push({
@@ -542,14 +534,14 @@ export const StudentDashboard: React.FC = () => {
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
           });
         });
-        
+
         console.log(`✅ Received ${updatedTeams.length} teams from Firestore`);
         setTeams(updatedTeams);
-        
+
         const userTeam = updatedTeams.find(team =>
           team.members.includes(user.id) || team.leaderId === user.id
         );
-        
+
         if (userTeam) {
           console.log(`👥 User is in team: ${userTeam.name} with ${userTeam.members.length} members`);
           setMyTeam(userTeam);
@@ -558,7 +550,7 @@ export const StudentDashboard: React.FC = () => {
           setMyTeam(null);
           setTeamMembers([]);
         }
-        
+
         updateTeams(updatedTeams);
       },
       (error) => {
@@ -587,7 +579,7 @@ export const StudentDashboard: React.FC = () => {
 
       for (const memberId of myTeam.members) {
         let member = users.find(u => u.id === memberId);
-        
+
         if (!member) {
           try {
             console.log(`🔍 Fetching member ${memberId} from Firestore...`);
@@ -644,7 +636,7 @@ export const StudentDashboard: React.FC = () => {
     };
 
     fetchProjectSelections();
-    
+
     const interval = setInterval(fetchProjectSelections, 5000);
     return () => clearInterval(interval);
   }, [myTeam]);
@@ -659,7 +651,7 @@ export const StudentDashboard: React.FC = () => {
 
       try {
         let guide = users.find(u => u.id === myTeam.guideId && u.role === 'faculty');
-        
+
         if (!guide) {
           console.log(`🔍 Fetching faculty guide ${myTeam.guideId} from Firestore...`);
           const guideDoc = await getDoc(doc(db, 'users', myTeam.guideId));
@@ -712,21 +704,21 @@ export const StudentDashboard: React.FC = () => {
         const teamDoc = await getDoc(doc(db, 'teams', myTeam.id));
         if (teamDoc.exists()) {
           const data = teamDoc.data();
-          
+
           // Parse project materials
           const materials = (data.projectMaterials || []).map((m: any) => ({
             ...m,
             addedAt: m.addedAt?.toDate ? m.addedAt.toDate() : new Date(m.addedAt)
           }));
           setProjectMaterials(materials);
-          
+
           // Parse feedback
           const feedback = (data.feedback || []).map((f: any) => ({
             ...f,
             addedAt: f.addedAt?.toDate ? f.addedAt.toDate() : new Date(f.addedAt)
           }));
           setTeamFeedback(feedback);
-          
+
           // Parse review schedules
           const schedules = (data.reviewSchedules || []).map((s: any) => ({
             ...s,
@@ -741,7 +733,7 @@ export const StudentDashboard: React.FC = () => {
     };
 
     fetchTeamData();
-    
+
     // Real-time listener for team data
     if (myTeam?.id) {
       const unsubscribe = onSnapshot(
@@ -749,19 +741,19 @@ export const StudentDashboard: React.FC = () => {
         (snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.data();
-            
+
             const materials = (data.projectMaterials || []).map((m: any) => ({
               ...m,
               addedAt: m.addedAt?.toDate ? m.addedAt.toDate() : new Date(m.addedAt)
             }));
             setProjectMaterials(materials);
-            
+
             const feedback = (data.feedback || []).map((f: any) => ({
               ...f,
               addedAt: f.addedAt?.toDate ? f.addedAt.toDate() : new Date(f.addedAt)
             }));
             setTeamFeedback(feedback);
-            
+
             const schedules = (data.reviewSchedules || []).map((s: any) => ({
               ...s,
               date: s.date?.toDate ? s.date.toDate() : new Date(s.date),
@@ -888,7 +880,7 @@ export const StudentDashboard: React.FC = () => {
 
       const teamId = await createTeamInFirestore(teamData);
       await updateUserTeamId(user.id, teamId);
-      
+
       setNewTeamName('');
       setMessage(`Team created successfully! Team ID: ${teamNumber}`);
       setTimeout(() => setMessage(''), 3000);
@@ -904,7 +896,7 @@ export const StudentDashboard: React.FC = () => {
 
     try {
       console.log(`📤 Submitting project selection: ${selectedProject} for team ${myTeam.id}`);
-      
+
       await updateUserProjectSelection(user.id, selectedProject);
       console.log(`✅ User ${user.id} project selection saved to Firestore`);
 
@@ -912,26 +904,26 @@ export const StudentDashboard: React.FC = () => {
       setTeamProjectSelections(updatedSelections);
 
       const consensus = await checkTeamProjectConsensus(myTeam.id);
-      
+
       if (consensus.hasConsensus && consensus.projectId) {
         console.log(`🎯 Team consensus reached! All 4 members selected project: ${consensus.projectId}`);
-        
+
         const projectDoc = await getDoc(doc(db, 'projects', consensus.projectId));
         if (projectDoc.exists()) {
           const projectData = projectDoc.data();
-          
+
           if (projectData.isAssigned && projectData.guideId) {
             setMessage(`⚠️ This project has already been assigned to another team. Please select a different project.`);
             setTimeout(() => setMessage(''), 8000);
             return;
           }
         }
-        
+
         await updateTeamProject(myTeam.id, consensus.projectId);
         console.log(`✅ Project ${consensus.projectId} stored in teams collection for team ${myTeam.id}`);
-        
+
         const assignmentResult = await autoAssignFacultyToTeam(myTeam.id, consensus.projectId);
-        
+
         if (assignmentResult.success) {
           setMessage(`✅ Project submitted successfully! Faculty guide has been automatically assigned to your team.`);
           setSelectedProject('');
@@ -941,14 +933,14 @@ export const StudentDashboard: React.FC = () => {
       } else {
         const selectedCount = Object.values(consensus.selections).filter(p => p !== null).length;
         const totalMembers = myTeam.members.length;
-        
+
         if (selectedCount < totalMembers) {
           setMessage(`✅ Project selection submitted! Waiting for all team members to select the same project (${selectedCount}/${totalMembers} selected).`);
         } else {
           setMessage(`⚠️ All members have selected projects, but they don't match. Please coordinate with your team to select the same project.`);
         }
       }
-      
+
       setTimeout(() => setMessage(''), 8000);
     } catch (error) {
       console.error('❌ Failed to submit project selection:', error);
@@ -978,10 +970,30 @@ export const StudentDashboard: React.FC = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Student Dashboard</h1>
         <div className="flex items-center space-x-4">
+          {unreadCount > 0 && (
+            <div className="relative">
+              <Bell className="h-5 w-5 text-blue-600 animate-pulse" />
+              <Badge
+                variant="destructive"
+                className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs rounded-full"
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </Badge>
+            </div>
+          )}
+          <Button variant="outline" size="sm" onClick={() => { if (typeof window !== 'undefined') { const win = window as Window & { runCompleteDemo?: () => void }; if (win.runCompleteDemo) { win.runCompleteDemo(); } } }}>🧪 Test Email System</Button>
           <div className="text-sm text-muted-foreground">Welcome, {user?.name}</div>
         </div>
       </div>
 
+      {unreadCount > 0 && (
+        <Alert className="bg-blue-50 border-blue-200 border-l-4">
+          <Bell className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800">
+            <strong>You have {unreadCount} unread notification{unreadCount > 1 ? 's' : ''}!</strong> Check the Notifications tab to view them.
+          </AlertDescription>
+        </Alert>
+      )}
       {message && (<Alert className={message.includes('successfully') || message.includes('sent to') || message.includes('✅') ? 'border-green-500 bg-green-50' : message.includes('❌') || message.includes('⚠️') ? 'border-red-500 bg-red-50' : ''}><AlertDescription>{message}</AlertDescription></Alert>)}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -999,7 +1011,18 @@ export const StudentDashboard: React.FC = () => {
           <TabsTrigger value="marks">My Marks</TabsTrigger>
           <TabsTrigger value="progress">Progress Tracking</TabsTrigger>
           <TabsTrigger value="email-progress">Email Progress</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="notifications" className="relative">
+            <Bell className="h-4 w-4 mr-2" />
+            Notifications
+            {unreadCount > 0 && (
+              <Badge
+                variant="destructive"
+                className="ml-2 h-5 min-w-5 flex items-center justify-center px-1.5 text-xs rounded-full"
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="email">Email Setup</TabsTrigger>
         </TabsList>
 
@@ -1012,9 +1035,9 @@ export const StudentDashboard: React.FC = () => {
             <CardHeader>
               <CardTitle>Available Projects</CardTitle>
               <CardDescription>
-                {myProject 
-                  ? `Current Project: ${myProject.title}` 
-                  : teamCapacity?.isFull 
+                {myProject
+                  ? `Current Project: ${myProject.title}`
+                  : teamCapacity?.isFull
                     ? 'Select a project for your team. All 4 members must select the same project to proceed.'
                     : 'Select a project for your team'}
               </CardDescription>
@@ -1052,8 +1075,8 @@ export const StudentDashboard: React.FC = () => {
                         <div className="space-y-2">
                           {teamMembers.map((member) => {
                             const memberSelection = teamProjectSelections[member.id];
-                            const selectedProjectTitle = memberSelection 
-                              ? projects.find(p => p.id === memberSelection)?.title 
+                            const selectedProjectTitle = memberSelection
+                              ? projects.find(p => p.id === memberSelection)?.title
                               : 'Not selected';
                             return (
                               <div key={member.id} className="flex items-center justify-between text-sm">
@@ -1070,7 +1093,7 @@ export const StudentDashboard: React.FC = () => {
                       </CardContent>
                     </Card>
                   )}
-                  
+
                   <div className="grid gap-4">
                     {availableProjects.map(project => (
                       <div key={project.id} className="space-y-3">
@@ -1081,27 +1104,27 @@ export const StudentDashboard: React.FC = () => {
                               <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
                               <Badge className="mt-2">{project.specialization}</Badge>
                             </div>
-                            <Button 
-                              size="sm" 
-                              onClick={() => setSelectedProject(project.id)} 
+                            <Button
+                              size="sm"
+                              onClick={() => setSelectedProject(project.id)}
                               variant={selectedProject === project.id ? "default" : "outline"}
                             >
                               {selectedProject === project.id ? "Selected" : "Select"}
                             </Button>
                           </div>
                         </div>
-                        
+
                         {selectedProject === project.id && (
                           <div className="space-y-2 pl-4 pr-4">
-                            <Button 
-                              onClick={handleSelectProject} 
+                            <Button
+                              onClick={handleSelectProject}
                               className="w-full"
                               size="lg"
                             >
                               Submit Project Selection
                             </Button>
                             <p className="text-xs text-center text-muted-foreground">
-                              {teamCapacity?.isFull 
+                              {teamCapacity?.isFull
                                 ? 'All 4 team members must submit the same project to proceed with faculty assignment.'
                                 : 'Your selection will be saved. Once your team is full, all members must select the same project.'}
                             </p>
@@ -1324,81 +1347,80 @@ export const StudentDashboard: React.FC = () => {
                       .map((schedule) => {
                         const isPast = schedule.date < new Date();
                         const isToday = schedule.date.toDateString() === new Date().toDateString();
-                        
+
                         return (
                           <div
                             key={schedule.id}
-                            className={`p-4 border rounded-lg ${
-                              schedule.status === 'completed' 
+                            className={`p-4 border rounded-lg ${schedule.status === 'completed'
                                 ? 'bg-green-50 border-green-200'
                                 : schedule.status === 'cancelled'
-                                ? 'bg-gray-50 border-gray-300 opacity-60'
-                                : isToday
-                                ? 'bg-orange-50 border-orange-300'
-                                : isPast
-                                ? 'bg-gray-50 border-gray-200'
-                                : 'bg-white border-gray-200'
-                            }`}
+                                  ? 'bg-gray-50 border-gray-300 opacity-60'
+                                  : isToday
+                                    ? 'bg-orange-50 border-orange-300'
+                                    : isPast
+                                      ? 'bg-gray-50 border-gray-200'
+                                      : 'bg-white border-gray-200'
+                              }`}
                           >
                             <div className="flex items-start justify-between mb-2">
                               <h4 className="font-semibold text-sm">{schedule.title}</h4>
-                              <Badge 
+                              <Badge
                                 variant={
-                                  schedule.status === 'completed' 
-                                    ? 'default' 
+                                  schedule.status === 'completed'
+                                    ? 'default'
                                     : schedule.status === 'cancelled'
-                                    ? 'secondary'
-                                    : isToday
-                                    ? 'destructive'
-                                    : 'outline'
+                                      ? 'secondary'
+                                      : isToday
+                                        ? 'destructive'
+                                        : 'outline'
                                 }
                                 className="text-xs"
                               >
-                                {schedule.status === 'completed' 
-                                  ? 'Completed' 
+                                {schedule.status === 'completed'
+                                  ? 'Completed'
                                   : schedule.status === 'cancelled'
-                                  ? 'Cancelled'
-                                  : isToday
-                                  ? 'Today'
-                                  : isPast
-                                  ? 'Past'
-                                  : 'Upcoming'}
+                                    ? 'Cancelled'
+                                    : isToday
+                                      ? 'Today'
+                                      : isPast
+                                        ? 'Past'
+                                        : 'Upcoming'}
                               </Badge>
                             </div>
-                            
+
                             {schedule.description && (
                               <p className="text-sm text-muted-foreground mb-3">
                                 {schedule.description}
                               </p>
                             )}
-                            
+
                             <div className="space-y-2">
                               <div className="flex items-center gap-2 text-sm">
                                 <Calendar className="h-4 w-4 text-muted-foreground" />
                                 <span className="font-medium">
-                                  {schedule.date.toLocaleDateString('en-US', { 
-                                    weekday: 'long', 
-                                    year: 'numeric', 
-                                    month: 'long', 
-                                    day: 'numeric' 
+                                  {schedule.date.toLocaleDateString('en-US', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
                                   })}
                                 </span>
                               </div>
-                              
+
                               {schedule.time && (
                                 <div className="flex items-center gap-2 text-sm">
                                   <Clock className="h-4 w-4 text-muted-foreground" />
                                   <span>{schedule.time}</span>
                                 </div>
                               )}
-                              
+
                               {schedule.location && (
                                 <div className="flex items-center gap-2 text-sm">
                                   <MapPin className="h-4 w-4 text-muted-foreground" />
                                   <span>{schedule.location}</span>
                                 </div>
                               )}
-                              
+
                               <div className="pt-2 border-t mt-2">
                                 <p className="text-xs text-muted-foreground">
                                   Scheduled by {schedule.addedByName}
@@ -1428,7 +1450,7 @@ export const StudentDashboard: React.FC = () => {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium">Upcoming Reviews</CardTitle>
@@ -1442,7 +1464,7 @@ export const StudentDashboard: React.FC = () => {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium">Next Review</CardTitle>
@@ -1452,7 +1474,7 @@ export const StudentDashboard: React.FC = () => {
                     const nextReview = reviewSchedules
                       .filter(s => s.date >= new Date() && s.status === 'scheduled')
                       .sort((a, b) => a.date.getTime() - b.date.getTime())[0];
-                    
+
                     return nextReview ? (
                       <>
                         <div className="text-lg font-bold">
@@ -1520,7 +1542,7 @@ export const StudentDashboard: React.FC = () => {
                                   <p className="text-sm text-muted-foreground">{facultyGuide.designation}</p>
                                 )}
                               </div>
-                              
+
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {facultyGuide.email && (
                                   <div className="flex items-center gap-2 text-sm">
@@ -1529,7 +1551,7 @@ export const StudentDashboard: React.FC = () => {
                                     <span className="font-medium">{facultyGuide.email}</span>
                                   </div>
                                 )}
-                                
+
                                 {facultyGuide.contactNumber && (
                                   <div className="flex items-center gap-2 text-sm">
                                     <Phone className="h-4 w-4 text-muted-foreground" />
@@ -1537,7 +1559,7 @@ export const StudentDashboard: React.FC = () => {
                                     <span className="font-medium">{facultyGuide.contactNumber}</span>
                                   </div>
                                 )}
-                                
+
                                 {facultyGuide.specialization && (
                                   <div className="flex items-center gap-2 text-sm">
                                     <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -1545,7 +1567,7 @@ export const StudentDashboard: React.FC = () => {
                                     <Badge variant="outline">{facultyGuide.specialization}</Badge>
                                   </div>
                                 )}
-                                
+
                                 {facultyGuide.employeeId && (
                                   <div className="flex items-center gap-2 text-sm">
                                     <UserIcon className="h-4 w-4 text-muted-foreground" />
@@ -1554,7 +1576,7 @@ export const StudentDashboard: React.FC = () => {
                                   </div>
                                 )}
                               </div>
-                              
+
                               {facultyGuide.school && (
                                 <div className="pt-2 border-t">
                                   <p className="text-sm">
@@ -1573,7 +1595,7 @@ export const StudentDashboard: React.FC = () => {
                       <AlertDescription>Loading faculty guide details...</AlertDescription>
                     </Alert>
                   )}
-                  
+
                   {myProject && (
                     <Card>
                       <CardHeader>
@@ -1590,7 +1612,7 @@ export const StudentDashboard: React.FC = () => {
                       </CardContent>
                     </Card>
                   )}
-                  
+
                   <Card>
                     <CardHeader>
                       <CardTitle>Project Milestones</CardTitle>

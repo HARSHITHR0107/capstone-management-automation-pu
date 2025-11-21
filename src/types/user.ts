@@ -31,6 +31,7 @@ export interface Team {
   status: 'forming' | 'complete' | 'assigned' | 'in-progress' | 'completed';
   invites: TeamInvite[];
   createdAt: Date;
+  projectMaterials?: any[]; // Array of project materials (links, files, etc.)
 }
 
 export interface TeamInvite {

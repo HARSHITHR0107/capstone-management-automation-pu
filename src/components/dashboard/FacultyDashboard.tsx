@@ -14,7 +14,9 @@ import { getUsers } from '@/lib/mockData';
 import { collection, onSnapshot, doc, getDoc, updateDoc, arrayUnion, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from 'sonner';
-import { Users, BookOpen, MessageSquare, Star, Mail, GraduationCap, Calendar, CheckCircle2, ExternalLink, Github, FileText, Link as LinkIcon, Clock, MapPin, Send, Download } from 'lucide-react';
+import { Users, BookOpen, MessageSquare, Star, Mail, GraduationCap, Calendar, CheckCircle2, ExternalLink, Github, FileText, Link as LinkIcon, Clock, MapPin, Send, Download, Bell } from 'lucide-react';
+import { NotificationDisplay } from '@/components/notifications/NotificationDisplay';
+import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 
 // Mock interfaces (replace with actual imports)
 interface User {
@@ -94,18 +96,19 @@ interface ExtendedTeam extends Team {
 
 export const FacultyDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { unreadCount } = useUnreadNotifications();
 
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [teams, setTeams] = useState<ExtendedTeam[]>([]);
   const [assignedTeams, setAssignedTeams] = useState<ExtendedTeam[]>([]);
-  
+
   // Feedback state
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [selectedTeamForFeedback, setSelectedTeamForFeedback] = useState<string | null>(null);
   const [feedbackContent, setFeedbackContent] = useState('');
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
-  
+
   // Schedule state
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [selectedTeamForSchedule, setSelectedTeamForSchedule] = useState<string | null>(null);
@@ -115,13 +118,13 @@ export const FacultyDashboard: React.FC = () => {
   const [scheduleTime, setScheduleTime] = useState('');
   const [scheduleLocation, setScheduleLocation] = useState('');
   const [isSubmittingSchedule, setIsSubmittingSchedule] = useState(false);
-  
+
   // Evaluation state
   const [evaluationDialogOpen, setEvaluationDialogOpen] = useState(false);
   const [selectedTeamForEvaluation, setSelectedTeamForEvaluation] = useState<ExtendedTeam | null>(null);
   const [selectedReviewPhase, setSelectedReviewPhase] = useState<number>(1);
-  const [memberMarks, setMemberMarks] = useState<{[memberId: string]: string}>({});
-  const [evaluationComments, setEvaluationComments] = useState<{[memberId: string]: string}>({});
+  const [memberMarks, setMemberMarks] = useState<{ [memberId: string]: string }>({});
+  const [evaluationComments, setEvaluationComments] = useState<{ [memberId: string]: string }>({});
   const [isSubmittingEvaluation, setIsSubmittingEvaluation] = useState(false);
 
   // Review phases configuration
@@ -138,7 +141,7 @@ export const FacultyDashboard: React.FC = () => {
       collection(db, 'users'),
       (snapshot) => {
         const firebaseUsers: User[] = [];
-        
+
         snapshot.forEach((doc) => {
           const data = doc.data();
           firebaseUsers.push({
@@ -159,7 +162,7 @@ export const FacultyDashboard: React.FC = () => {
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
           });
         });
-        
+
         const localUsers = getUsers();
         const userMap = new Map<string, User>();
         localUsers.forEach(u => userMap.set(u.id, u));
@@ -181,7 +184,7 @@ export const FacultyDashboard: React.FC = () => {
       collection(db, 'projects'),
       (snapshot) => {
         const updatedProjects: Project[] = [];
-        
+
         snapshot.forEach((doc) => {
           const data = doc.data();
           updatedProjects.push({
@@ -195,7 +198,7 @@ export const FacultyDashboard: React.FC = () => {
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
           });
         });
-        
+
         setProjects(updatedProjects);
       },
       (error) => {
@@ -215,10 +218,10 @@ export const FacultyDashboard: React.FC = () => {
       collection(db, 'teams'),
       (snapshot) => {
         const updatedTeams: ExtendedTeam[] = [];
-        
+
         snapshot.forEach((doc) => {
           const data = doc.data();
-          
+
           const projectMaterials = data.projectMaterials?.map((material: any) => ({
             addedAt: material.addedAt?.toDate ? material.addedAt.toDate() : new Date(),
             addedBy: material.addedBy || '',
@@ -228,7 +231,7 @@ export const FacultyDashboard: React.FC = () => {
             type: material.type || 'link',
             url: material.url || ''
           })) || [];
-          
+
           const feedback = data.feedback?.map((fb: any) => ({
             id: fb.id || '',
             content: fb.content || '',
@@ -237,7 +240,7 @@ export const FacultyDashboard: React.FC = () => {
             addedAt: fb.addedAt?.toDate ? fb.addedAt.toDate() : new Date(),
             type: fb.type || 'guide'
           })) || [];
-          
+
           const reviewSchedules = data.reviewSchedules?.map((schedule: any) => ({
             id: schedule.id || '',
             title: schedule.title || '',
@@ -250,7 +253,7 @@ export const FacultyDashboard: React.FC = () => {
             status: schedule.status || 'scheduled',
             addedAt: schedule.addedAt?.toDate ? schedule.addedAt.toDate() : new Date()
           })) || [];
-          
+
           updatedTeams.push({
             id: doc.id,
             name: data.name || '',
@@ -268,19 +271,19 @@ export const FacultyDashboard: React.FC = () => {
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
           });
         });
-        
+
         setTeams(updatedTeams);
 
         const myAssignedTeams = updatedTeams.filter(team => {
           const directIdMatch = team.guideId === user.id || team.reviewerId === user.id;
           if (directIdMatch) return true;
-          
+
           const guideUser = users.find(u => u.id === team.guideId);
           const reviewerUser = users.find(u => u.id === team.reviewerId);
-          
+
           return (guideUser?.email === user.email || reviewerUser?.email === user.email) && user.role === 'faculty';
         });
-        
+
         setAssignedTeams(myAssignedTeams);
       },
       (error) => {
@@ -305,7 +308,7 @@ export const FacultyDashboard: React.FC = () => {
       if (assignedTeams.length === 0) return;
 
       const missingMemberIds: string[] = [];
-      
+
       assignedTeams.forEach(team => {
         team.members.forEach(memberId => {
           if (!users.find(u => u.id === memberId) && !missingMemberIds.includes(memberId)) {
@@ -315,7 +318,7 @@ export const FacultyDashboard: React.FC = () => {
       });
 
       if (missingMemberIds.length === 0) return;
-      
+
       const memberPromises = missingMemberIds.map(async (memberId) => {
         try {
           const memberDoc = await getDoc(doc(db, 'users', memberId));
@@ -341,7 +344,7 @@ export const FacultyDashboard: React.FC = () => {
       });
 
       const fetchedMembers = (await Promise.all(memberPromises)).filter(Boolean) as User[];
-      
+
       if (fetchedMembers.length > 0) {
         setUsers(prev => {
           const userMap = new Map(prev.map(u => [u.id, u]));
@@ -409,7 +412,7 @@ export const FacultyDashboard: React.FC = () => {
       setIsSubmittingSchedule(true);
 
       const reviewDate = new Date(scheduleDate);
-      
+
       if (scheduleTime) {
         const [hours, minutes] = scheduleTime.split(':');
         reviewDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
@@ -442,16 +445,16 @@ export const FacultyDashboard: React.FC = () => {
       const team = assignedTeams.find(t => t.id === selectedTeamForSchedule);
       if (team) {
         const teamMembers = getTeamMembers(team);
-        const formattedDate = reviewDate.toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+        const formattedDate = reviewDate.toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
         });
-        
+
         console.log(`📧 Sending schedule notification emails to ${teamMembers.length} team members`);
         console.log(`📅 Review: ${scheduleTitle} on ${formattedDate} ${scheduleTime ? 'at ' + scheduleTime : ''}`);
-        
+
         toast.success(`Review scheduled! Email notifications sent to ${teamMembers.length} team members.`);
       } else {
         toast.success('Review scheduled successfully!');
@@ -476,8 +479,8 @@ export const FacultyDashboard: React.FC = () => {
     console.log('🔍 Opening evaluation for team:', team);
     setSelectedTeamForEvaluation(team);
     setSelectedReviewPhase(1); // Default to Review 1
-    const marks: {[key: string]: string} = {};
-    const comments: {[key: string]: string} = {};
+    const marks: { [key: string]: string } = {};
+    const comments: { [key: string]: string } = {};
     team.members.forEach(memberId => {
       marks[memberId] = '';
       comments[memberId] = '';
@@ -514,15 +517,15 @@ export const FacultyDashboard: React.FC = () => {
 
       const teamRef = doc(db, 'teams', selectedTeamForEvaluation.id);
       const teamDoc = await getDoc(teamRef);
-      
+
       if (teamDoc.exists()) {
         const existingEvaluations = teamDoc.data().evaluations || [];
-        
+
         // Remove any existing evaluation for this phase
         const filteredEvaluations = existingEvaluations.filter(
           (e: any) => e.reviewPhase !== selectedReviewPhase
         );
-        
+
         // Add new evaluation
         await updateDoc(teamRef, {
           evaluations: [...filteredEvaluations, ...evaluationData],
@@ -532,7 +535,7 @@ export const FacultyDashboard: React.FC = () => {
 
       console.log('✅ Evaluation saved to Firestore');
       toast.success(`${currentPhase.name} evaluation submitted successfully!`);
-      
+
       setEvaluationDialogOpen(false);
       setSelectedTeamForEvaluation(null);
       setSelectedReviewPhase(1);
@@ -567,15 +570,15 @@ export const FacultyDashboard: React.FC = () => {
 
     try {
       let csvContent = 'Team Name,Team Number,Project,Student Name,Roll Number,Email,Role,Marks (Out of 100),Comments\n';
-      
+
       assignedTeams.forEach(team => {
         const members = getTeamMembers(team);
         const project = projects.find(p => p.id === team.projectId);
-        
+
         members.forEach(member => {
           csvContent += `"${team.name}","${team.teamNumber || 'N/A'}","${project?.title || 'No project'}","${member.name}","${member.rollNo || 'N/A'}","${member.email}","${member.id === team.leaderId ? 'Leader' : 'Member'}","",""\n`;
         });
-        
+
         csvContent += '\n';
       });
 
@@ -588,7 +591,7 @@ export const FacultyDashboard: React.FC = () => {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      
+
       toast.success('CSV file downloaded successfully!');
     } catch (error) {
       console.error('❌ Failed to generate file:', error);
@@ -603,7 +606,7 @@ export const FacultyDashboard: React.FC = () => {
   };
 
   const getIconForMaterialType = (type: string) => {
-    switch(type.toLowerCase()) {
+    switch (type.toLowerCase()) {
       case 'github':
         return <Github className="h-4 w-4" />;
       case 'document':
@@ -618,7 +621,7 @@ export const FacultyDashboard: React.FC = () => {
     assignedTeams: assignedTeams.length,
     maxTeams: user?.maxTeams || 3,
     availableSlots: Math.max(0, (user?.maxTeams || 3) - assignedTeams.length),
-    completedReviews: assignedTeams.reduce((acc, team) => 
+    completedReviews: assignedTeams.reduce((acc, team) =>
       acc + (team.reviewSchedules?.filter(s => s.status === 'completed').length || 0), 0
     )
   };
@@ -629,16 +632,37 @@ export const FacultyDashboard: React.FC = () => {
         <h1 className="text-3xl font-bold">
           {user?.role === 'faculty' ? 'Faculty Guide' : 'Reviewer'} Dashboard
         </h1>
-        <div className="text-sm text-muted-foreground">
-          Welcome, {user?.name}
+        <div className="flex items-center space-x-4">
+          {unreadCount > 0 && (
+            <div className="relative">
+              <Bell className="h-5 w-5 text-blue-600 animate-pulse" />
+              <Badge
+                variant="destructive"
+                className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs rounded-full"
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </Badge>
+            </div>
+          )}
+          <div className="text-sm text-muted-foreground">
+            Welcome, {user?.name}
+          </div>
         </div>
       </div>
 
+      {unreadCount > 0 && (
+        <Alert className="bg-blue-50 border-blue-200 border-l-4">
+          <Bell className="h-4 w-4 text-blue-600 animate-pulse" />
+          <AlertDescription className="text-blue-800">
+            <strong>You have {unreadCount} unread notification{unreadCount > 1 ? 's' : ''}!</strong> Check the Notifications tab to view them.
+          </AlertDescription>
+        </Alert>
+      )}
       {assignedTeams.length > 0 && (
         <Alert className="bg-green-50 border-green-200">
           <CheckCircle2 className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            <strong>✅ Email Matching Enabled:</strong> Teams matched using {user?.email}. 
+            <strong>✅ Email Matching Enabled:</strong> Teams matched using {user?.email}.
             {assignedTeams.length} team(s) found.
           </AlertDescription>
         </Alert>
@@ -694,6 +718,18 @@ export const FacultyDashboard: React.FC = () => {
           <TabsTrigger value="teams">My Teams</TabsTrigger>
           <TabsTrigger value="evaluation">Evaluation</TabsTrigger>
           <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          <TabsTrigger value="notifications" className="relative">
+            <Bell className="h-4 w-4 mr-2" />
+            Notifications
+            {unreadCount > 0 && (
+              <Badge
+                variant="destructive"
+                className="ml-2 h-5 min-w-5 flex items-center justify-center px-1.5 text-xs rounded-full"
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="teams" className="space-y-4">
@@ -771,12 +807,10 @@ export const FacultyDashboard: React.FC = () => {
                                   </p>
                                 ) : (
                                   members.map((member) => (
-                                    <div key={member.id} className={`flex items-center gap-4 p-3 border rounded-lg ${
-                                      member.id === team.leaderId ? 'bg-blue-50 border-blue-300' : 'bg-white'
-                                    }`}>
-                                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${
-                                        member.id === team.leaderId ? 'bg-blue-600' : 'bg-gray-500'
+                                    <div key={member.id} className={`flex items-center gap-4 p-3 border rounded-lg ${member.id === team.leaderId ? 'bg-blue-50 border-blue-300' : 'bg-white'
                                       }`}>
+                                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${member.id === team.leaderId ? 'bg-blue-600' : 'bg-gray-500'
+                                        }`}>
                                         {member.name.charAt(0).toUpperCase()}
                                       </div>
                                       <div className="flex-1">
@@ -832,9 +866,9 @@ export const FacultyDashboard: React.FC = () => {
                                             {material.type}
                                           </Badge>
                                         </div>
-                                        <a 
-                                          href={material.url} 
-                                          target="_blank" 
+                                        <a
+                                          href={material.url}
+                                          target="_blank"
                                           rel="noopener noreferrer"
                                           className="text-xs text-blue-600 hover:text-blue-800 mt-2 inline-flex items-center gap-1"
                                         >
@@ -850,8 +884,8 @@ export const FacultyDashboard: React.FC = () => {
 
                             {/* Actions */}
                             <div className="flex flex-wrap gap-2 pt-4 border-t">
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 variant="outline"
                                 onClick={() => {
                                   setSelectedTeamForFeedback(team.id);
@@ -861,7 +895,7 @@ export const FacultyDashboard: React.FC = () => {
                                 <MessageSquare className="h-4 w-4 mr-2" />
                                 Add Feedback
                               </Button>
-                              <Button 
+                              <Button
                                 size="sm"
                                 onClick={() => {
                                   setSelectedTeamForSchedule(team.id);
@@ -891,7 +925,7 @@ export const FacultyDashboard: React.FC = () => {
                   <CardTitle>Team Evaluations</CardTitle>
                   <CardDescription>Review materials and assign marks to team members</CardDescription>
                 </div>
-                <Button 
+                <Button
                   onClick={handleDownloadExcel}
                   disabled={assignedTeams.length === 0}
                   variant="outline"
@@ -939,8 +973,8 @@ export const FacultyDashboard: React.FC = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             onClick={() => handleOpenEvaluation(team)}
                           >
                             Evaluate
@@ -953,6 +987,10 @@ export const FacultyDashboard: React.FC = () => {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-4">
+          <NotificationDisplay />
         </TabsContent>
 
         <TabsContent value="schedule" className="space-y-4">
@@ -969,13 +1007,13 @@ export const FacultyDashboard: React.FC = () => {
               ) : (
                 <div className="space-y-4">
                   {assignedTeams.map((team) => {
-                    const upcomingReviews = team.reviewSchedules?.filter(s => 
+                    const upcomingReviews = team.reviewSchedules?.filter(s =>
                       s.date >= new Date() && s.status === 'scheduled'
                     ) || [];
-                    const completedReviews = team.reviewSchedules?.filter(s => 
+                    const completedReviews = team.reviewSchedules?.filter(s =>
                       s.status === 'completed'
                     ) || [];
-                    
+
                     return (
                       <Card key={team.id}>
                         <CardHeader>
@@ -984,7 +1022,7 @@ export const FacultyDashboard: React.FC = () => {
                               <CardTitle>{team.name}</CardTitle>
                               <CardDescription>{getProjectTitle(team.projectId)}</CardDescription>
                             </div>
-                            <Button 
+                            <Button
                               size="sm"
                               onClick={() => {
                                 setSelectedTeamForSchedule(team.id);
@@ -1008,7 +1046,7 @@ export const FacultyDashboard: React.FC = () => {
                                 <p className="text-2xl font-bold">{completedReviews.length}</p>
                               </div>
                             </div>
-                            
+
                             {team.reviewSchedules && team.reviewSchedules.length > 0 && (
                               <div className="space-y-2 max-h-60 overflow-y-auto">
                                 {team.reviewSchedules
@@ -1018,8 +1056,8 @@ export const FacultyDashboard: React.FC = () => {
                                       <div className="flex justify-between items-start mb-2">
                                         <h5 className="font-semibold">{schedule.title}</h5>
                                         <Badge variant={
-                                          schedule.status === 'completed' ? 'default' : 
-                                          schedule.status === 'cancelled' ? 'secondary' : 'outline'
+                                          schedule.status === 'completed' ? 'default' :
+                                            schedule.status === 'cancelled' ? 'secondary' : 'outline'
                                         }>
                                           {schedule.status}
                                         </Badge>
@@ -1084,8 +1122,8 @@ export const FacultyDashboard: React.FC = () => {
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setFeedbackDialogOpen(false);
                 setFeedbackContent('');
@@ -1094,7 +1132,7 @@ export const FacultyDashboard: React.FC = () => {
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleSubmitFeedback}
               disabled={!feedbackContent.trim() || isSubmittingFeedback}
             >
@@ -1187,8 +1225,8 @@ export const FacultyDashboard: React.FC = () => {
             </Alert>
           </div>
           <div className="flex justify-end gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setScheduleDialogOpen(false);
                 setScheduleTitle('');
@@ -1202,7 +1240,7 @@ export const FacultyDashboard: React.FC = () => {
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleScheduleReview}
               disabled={!scheduleTitle.trim() || !scheduleDate || isSubmittingSchedule}
             >
@@ -1230,7 +1268,7 @@ export const FacultyDashboard: React.FC = () => {
               Review submitted materials and assign marks to each team member
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedTeamForEvaluation && (
             <div className="space-y-6 py-4">
               {/* Review Phase Selector */}
@@ -1241,16 +1279,15 @@ export const FacultyDashboard: React.FC = () => {
                     <Button
                       key={phase.phase}
                       variant={selectedReviewPhase === phase.phase ? "default" : "outline"}
-                      className={`flex flex-col items-center p-4 h-auto ${
-                        selectedReviewPhase === phase.phase 
-                          ? 'bg-blue-600 hover:bg-blue-700' 
+                      className={`flex flex-col items-center p-4 h-auto ${selectedReviewPhase === phase.phase
+                          ? 'bg-blue-600 hover:bg-blue-700'
                           : 'hover:bg-blue-50'
-                      }`}
+                        }`}
                       onClick={() => {
                         setSelectedReviewPhase(phase.phase);
                         // Reset marks when switching phases
-                        const marks: {[key: string]: string} = {};
-                        const comments: {[key: string]: string} = {};
+                        const marks: { [key: string]: string } = {};
+                        const comments: { [key: string]: string } = {};
                         selectedTeamForEvaluation.members.forEach(memberId => {
                           marks[memberId] = '';
                           comments[memberId] = '';
@@ -1265,7 +1302,7 @@ export const FacultyDashboard: React.FC = () => {
                   ))}
                 </div>
                 <div className="mt-3 text-sm text-blue-700 bg-blue-100 p-2 rounded">
-                  <strong>Current Selection:</strong> {reviewPhases.find(p => p.phase === selectedReviewPhase)?.name} 
+                  <strong>Current Selection:</strong> {reviewPhases.find(p => p.phase === selectedReviewPhase)?.name}
                   (Maximum {reviewPhases.find(p => p.phase === selectedReviewPhase)?.maxMarks} marks per student)
                 </div>
               </div>
@@ -1306,9 +1343,9 @@ export const FacultyDashboard: React.FC = () => {
                               {material.type}
                             </Badge>
                           </div>
-                          <a 
-                            href={material.url} 
-                            target="_blank" 
+                          <a
+                            href={material.url}
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs text-blue-600 hover:text-blue-800 mt-2 inline-flex items-center gap-1"
                           >
@@ -1341,13 +1378,12 @@ export const FacultyDashboard: React.FC = () => {
                     const maxMarks = reviewPhases.find(p => p.phase === selectedReviewPhase)?.maxMarks || 100;
                     const currentMarks = memberMarks[member.id] ? parseFloat(memberMarks[member.id]) : 0;
                     const percentage = maxMarks > 0 ? (currentMarks / maxMarks) * 100 : 0;
-                    
+
                     return (
                       <div key={member.id} className="border rounded-lg p-4 space-y-3 bg-white">
                         <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${
-                            member.id === selectedTeamForEvaluation.leaderId ? 'bg-blue-600' : 'bg-gray-500'
-                          }`}>
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${member.id === selectedTeamForEvaluation.leaderId ? 'bg-blue-600' : 'bg-gray-500'
+                            }`}>
                             {member.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="flex-1">
@@ -1360,7 +1396,7 @@ export const FacultyDashboard: React.FC = () => {
                             <p className="text-sm text-muted-foreground">{member.rollNo}</p>
                           </div>
                         </div>
-                        
+
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <Label htmlFor={`marks-${member.id}`}>
@@ -1398,13 +1434,12 @@ export const FacultyDashboard: React.FC = () => {
                                     </span>
                                   </div>
                                   <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div 
-                                      className={`h-2 rounded-full transition-all ${
-                                        percentage >= 90 ? 'bg-green-500' :
-                                        percentage >= 70 ? 'bg-blue-500' :
-                                        percentage >= 50 ? 'bg-yellow-500' :
-                                        'bg-red-500'
-                                      }`}
+                                    <div
+                                      className={`h-2 rounded-full transition-all ${percentage >= 90 ? 'bg-green-500' :
+                                          percentage >= 70 ? 'bg-blue-500' :
+                                            percentage >= 50 ? 'bg-yellow-500' :
+                                              'bg-red-500'
+                                        }`}
                                       style={{ width: `${Math.min(percentage, 100)}%` }}
                                     />
                                   </div>
@@ -1439,7 +1474,7 @@ export const FacultyDashboard: React.FC = () => {
 
               <Alert>
                 <AlertDescription className="text-xs">
-                  <strong>Note:</strong> Marks are saved per review phase. You can evaluate each phase separately. 
+                  <strong>Note:</strong> Marks are saved per review phase. You can evaluate each phase separately.
                   Total marks = Review 1 (20) + Review 2 (20) + Review 3 (20) + Final Review (40) = 100 marks.
                 </AlertDescription>
               </Alert>
@@ -1447,8 +1482,8 @@ export const FacultyDashboard: React.FC = () => {
           )}
 
           <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setEvaluationDialogOpen(false);
                 setSelectedTeamForEvaluation(null);
@@ -1460,7 +1495,7 @@ export const FacultyDashboard: React.FC = () => {
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleSubmitEvaluation}
               disabled={isSubmittingEvaluation || !selectedTeamForEvaluation?.members.every(id => memberMarks[id])}
             >

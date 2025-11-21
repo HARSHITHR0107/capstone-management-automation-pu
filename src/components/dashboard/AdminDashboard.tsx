@@ -11,12 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { User, Project, Team } from '@/types/user';
-import { Users, BookOpen, UserCheck, TrendingUp, FileSpreadsheet, Database, Mail, Phone, Briefcase } from 'lucide-react';
+import { Users, BookOpen, UserCheck, TrendingUp, FileSpreadsheet, Database, Mail, Phone, Briefcase, Bell, MessageSquare, Send } from 'lucide-react';
 import { ExcelUpload } from '@/components/admin/ExcelUpload';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where, addDoc, serverTimestamp, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, addDoc, serverTimestamp, updateDoc, doc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { sendGlobalNotification, getAllSentNotifications, GlobalNotification } from '@/lib/globalNotificationService';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const AdminDashboard: React.FC = () => {
+  const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [students, setStudents] = useState<User[]>([]);
   const [faculty, setFaculty] = useState<User[]>([]);
@@ -29,9 +32,59 @@ export const AdminDashboard: React.FC = () => {
     specialization: ''
   });
 
+  // Global notification state
+  const [notifications, setNotifications] = useState<GlobalNotification[]>([]);
+  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
+  const [newNotification, setNewNotification] = useState({
+    title: '',
+    message: '',
+    targetRoles: ['student', 'faculty'] as ('student' | 'faculty' | 'admin')[]
+  });
+  const [isSendingNotification, setIsSendingNotification] = useState(false);
+
   useEffect(() => {
     fetchData();
+    fetchNotifications();
   }, []);
+
+  // Real-time listener for notifications
+  useEffect(() => {
+    const q = query(collection(db, 'globalNotifications'));
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const notificationsData: GlobalNotification[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          notificationsData.push({
+            id: doc.id,
+            title: data.title || '',
+            message: data.message || '',
+            targetRoles: data.targetRoles || [],
+            sentBy: data.sentBy || '',
+            sentByName: data.sentByName || 'Admin',
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+            readBy: data.readBy || [],
+          });
+        });
+        setNotifications(notificationsData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
+      },
+      (error) => {
+        console.error('Error listening to notifications:', error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const allNotifications = await getAllSentNotifications();
+      setNotifications(allNotifications);
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -63,9 +116,9 @@ export const AdminDashboard: React.FC = () => {
           employeeId: data.employeeId,
           school: data.school,
         };
-        
+
         usersData.push(user);
-        
+
         // Separate into students and faculty
         if (user.role === 'student') {
           studentsData.push(user);
@@ -143,7 +196,7 @@ export const AdminDashboard: React.FC = () => {
         user.id === userId ? { ...user, isVerified: true } : user
       );
       setUsers(updatedUsers);
-      
+
       // Update students/faculty arrays
       setStudents(updatedUsers.filter(u => u.role === 'student'));
       setFaculty(updatedUsers.filter(u => u.role === 'faculty'));
@@ -205,6 +258,46 @@ export const AdminDashboard: React.FC = () => {
 
   const handleDataRefresh = () => {
     fetchData();
+  };
+
+  const handleSendNotification = async () => {
+    if (!newNotification.title.trim() || !newNotification.message.trim() || newNotification.targetRoles.length === 0) {
+      alert('Please fill in all fields and select at least one target audience');
+      return;
+    }
+
+    if (!user) {
+      alert('User not found');
+      return;
+    }
+
+    try {
+      setIsSendingNotification(true);
+      const result = await sendGlobalNotification({
+        title: newNotification.title.trim(),
+        message: newNotification.message.trim(),
+        targetRoles: newNotification.targetRoles,
+        sentBy: user.id,
+        sentByName: user.name || 'Admin',
+      });
+
+      if (result.success) {
+        alert(`✅ Notification sent successfully to ${newNotification.targetRoles.join(' and ')}!`);
+        setNewNotification({
+          title: '',
+          message: '',
+          targetRoles: ['student', 'faculty'],
+        });
+        setNotificationDialogOpen(false);
+      } else {
+        alert(`❌ Failed to send notification: ${result.error}`);
+      }
+    } catch (error: any) {
+      console.error('Error sending notification:', error);
+      alert(`❌ Error: ${error.message || 'Failed to send notification'}`);
+    } finally {
+      setIsSendingNotification(false);
+    }
   };
 
   const stats = {
@@ -282,6 +375,10 @@ export const AdminDashboard: React.FC = () => {
       <Tabs defaultValue="upload" className="w-full">
         <TabsList>
           <TabsTrigger value="upload">Excel Upload</TabsTrigger>
+          <TabsTrigger value="notifications">
+            <Bell className="h-4 w-4 mr-2" />
+            Notifications ({notifications.length})
+          </TabsTrigger>
           <TabsTrigger value="students">Students ({stats.totalStudents})</TabsTrigger>
           <TabsTrigger value="faculty">Faculty ({stats.totalFaculty})</TabsTrigger>
           <TabsTrigger value="projects">Projects</TabsTrigger>
@@ -290,6 +387,196 @@ export const AdminDashboard: React.FC = () => {
 
         <TabsContent value="upload" className="space-y-4">
           <ExcelUpload onDataProcessed={handleDataRefresh} />
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bell className="h-5 w-5" />
+                    Global Notifications
+                  </CardTitle>
+                  <CardDescription>
+                    Send announcements to all registered users (students and faculty)
+                  </CardDescription>
+                </div>
+                <Dialog open={notificationDialogOpen} onOpenChange={setNotificationDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Send className="h-4 w-4 mr-2" />
+                      Send Notification
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                      <DialogTitle>Send Global Notification</DialogTitle>
+                      <DialogDescription>
+                        This notification will be sent to all users with the selected roles
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div>
+                        <Label htmlFor="notification-title">Title *</Label>
+                        <Input
+                          id="notification-title"
+                          value={newNotification.title}
+                          onChange={(e) => setNewNotification({ ...newNotification, title: e.target.value })}
+                          placeholder="e.g., Important Announcement"
+                          className="mt-2"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="notification-message">Message *</Label>
+                        <Textarea
+                          id="notification-message"
+                          value={newNotification.message}
+                          onChange={(e) => setNewNotification({ ...newNotification, message: e.target.value })}
+                          placeholder="Enter your notification message..."
+                          rows={6}
+                          className="mt-2"
+                        />
+                      </div>
+                      <div>
+                        <Label>Target Audience *</Label>
+                        <div className="flex flex-wrap gap-3 mt-2">
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="target-students"
+                              checked={newNotification.targetRoles.includes('student')}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setNewNotification({
+                                    ...newNotification,
+                                    targetRoles: [...newNotification.targetRoles, 'student'],
+                                  });
+                                } else {
+                                  setNewNotification({
+                                    ...newNotification,
+                                    targetRoles: newNotification.targetRoles.filter((r) => r !== 'student'),
+                                  });
+                                }
+                              }}
+                              className="rounded"
+                            />
+                            <Label htmlFor="target-students" className="font-normal cursor-pointer">
+                              Students ({stats.totalStudents})
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="target-faculty"
+                              checked={newNotification.targetRoles.includes('faculty')}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setNewNotification({
+                                    ...newNotification,
+                                    targetRoles: [...newNotification.targetRoles, 'faculty'],
+                                  });
+                                } else {
+                                  setNewNotification({
+                                    ...newNotification,
+                                    targetRoles: newNotification.targetRoles.filter((r) => r !== 'faculty'),
+                                  });
+                                }
+                              }}
+                              className="rounded"
+                            />
+                            <Label htmlFor="target-faculty" className="font-normal cursor-pointer">
+                              Faculty ({stats.totalFaculty})
+                            </Label>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Total recipients: {
+                            (newNotification.targetRoles.includes('student') ? stats.totalStudents : 0) +
+                            (newNotification.targetRoles.includes('faculty') ? stats.totalFaculty : 0)
+                          } users
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setNotificationDialogOpen(false);
+                          setNewNotification({
+                            title: '',
+                            message: '',
+                            targetRoles: ['student', 'faculty'],
+                          });
+                        }}
+                        disabled={isSendingNotification}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleSendNotification}
+                        disabled={isSendingNotification || !newNotification.title.trim() || !newNotification.message.trim() || newNotification.targetRoles.length === 0}
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        {isSendingNotification ? 'Sending...' : 'Send Notification'}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {notifications.length === 0 ? (
+                <Alert>
+                  <AlertDescription>
+                    No notifications sent yet. Click "Send Notification" to send your first announcement.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="space-y-3">
+                  {notifications.map((notification) => {
+                    const totalRecipients =
+                      (notification.targetRoles.includes('student') ? stats.totalStudents : 0) +
+                      (notification.targetRoles.includes('faculty') ? stats.totalFaculty : 0);
+                    const readCount = notification.readBy.length;
+                    const readPercentage = totalRecipients > 0 ? Math.round((readCount / totalRecipients) * 100) : 0;
+
+                    return (
+                      <Card key={notification.id} className="border-l-4 border-l-blue-500">
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <CardTitle className="text-lg">{notification.title}</CardTitle>
+                              <CardDescription className="mt-2 whitespace-pre-wrap">
+                                {notification.message}
+                              </CardDescription>
+                            </div>
+                            <Badge variant="outline">
+                              {notification.targetRoles.join(', ')}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center justify-between text-sm text-muted-foreground">
+                            <div className="flex items-center gap-4">
+                              <span>Sent by: {notification.sentByName}</span>
+                              <span>{notification.createdAt.toLocaleString()}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <MessageSquare className="h-4 w-4" />
+                              <span>
+                                {readCount}/{totalRecipients} read ({readPercentage}%)
+                              </span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="students" className="space-y-4">
@@ -390,46 +677,46 @@ export const AdminDashboard: React.FC = () => {
                               <Badge variant="secondary">Pending</Badge>
                             )}
                           </div>
-                          
+
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                             <div className="flex items-center gap-2">
                               <Mail className="h-4 w-4 text-muted-foreground" />
                               <span>{member.email}</span>
                             </div>
-                            
+
                             {member.contactNumber && (
                               <div className="flex items-center gap-2">
                                 <Phone className="h-4 w-4 text-muted-foreground" />
                                 <span>{member.contactNumber}</span>
                               </div>
                             )}
-                            
+
                             {member.designation && (
                               <div className="flex items-center gap-2">
                                 <Briefcase className="h-4 w-4 text-muted-foreground" />
                                 <span>{member.designation}</span>
                               </div>
                             )}
-                            
+
                             {member.school && (
                               <div className="flex items-center gap-2">
                                 <BookOpen className="h-4 w-4 text-muted-foreground" />
                                 <span>{member.school}</span>
                               </div>
                             )}
-                            
+
                             {member.employeeId && (
                               <div className="text-muted-foreground">
                                 Employee ID: {member.employeeId}
                               </div>
                             )}
-                            
+
                             <div className="text-muted-foreground">
                               Max Teams: {member.maxTeams || 3}
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex gap-2">
                           {!member.isVerified && (
                             <Button
@@ -519,7 +806,7 @@ export const AdminDashboard: React.FC = () => {
                 </Dialog>
               </CardHeader>
             </Card>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle>Projects List</CardTitle>
