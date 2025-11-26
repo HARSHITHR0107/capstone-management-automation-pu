@@ -12,7 +12,7 @@ import { createTeamInFirestore, updateUserTeamId, getTeamCapacity, updateUserPro
 import { User, Project, Team } from '@/types/user';
 import { collection, getDocs, onSnapshot, doc, getDoc, updateDoc, arrayUnion, arrayRemove, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Users, BookOpen, Plus, Mail, AlertCircle, User as UserIcon, GraduationCap, Phone, Link as LinkIcon, Github, FolderOpen, Trash2, ExternalLink, MessageSquare, Calendar, Clock, MapPin, Bell } from 'lucide-react';
+import { Users, BookOpen, Plus, Mail, AlertCircle, User as UserIcon, GraduationCap, Phone, Link as LinkIcon, Github, FolderOpen, Trash2, ExternalLink, MessageSquare, Calendar, Clock, MapPin, Bell, Search } from 'lucide-react';
 import { InvitationManager } from '@/components/teams/InvitationManager';
 import { requestNotificationPermission } from '@/lib/emailService';
 import { EmailSetupStatus } from '@/components/ui/EmailSetupStatus';
@@ -419,6 +419,7 @@ export const StudentDashboard: React.FC = () => {
   // Feedback and schedule state
   const [teamFeedback, setTeamFeedback] = useState<Feedback[]>([]);
   const [reviewSchedules, setReviewSchedules] = useState<ReviewSchedule[]>([]);
+  const [projectSearch, setProjectSearch] = useState('');
 
   // Fetch users from Firestore with real-time updates
   useEffect(() => {
@@ -1064,6 +1065,17 @@ export const StudentDashboard: React.FC = () => {
                 </Alert>
               ) : (
                 <div className="space-y-4">
+                  <div className="mb-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search projects by title or description..."
+                        value={projectSearch}
+                        onChange={(e) => setProjectSearch(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
                   {teamCapacity?.isFull && Object.keys(teamProjectSelections).length > 0 && (
                     <Card className="bg-blue-50">
                       <CardHeader>
@@ -1093,44 +1105,50 @@ export const StudentDashboard: React.FC = () => {
                   )}
 
                   <div className="grid gap-4">
-                    {availableProjects.map(project => (
-                      <div key={project.id} className="space-y-3">
-                        <div className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                          <div className="flex flex-col md:flex-row items-start justify-between gap-4 md:gap-0">
-                            <div className="flex-1">
-                              <h3 className="font-semibold">{project.title}</h3>
-                              <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
-                              <Badge className="mt-2">{project.specialization}</Badge>
+                    {availableProjects
+                      .filter(project =>
+                        projectSearch === '' ||
+                        project.title.toLowerCase().includes(projectSearch.toLowerCase()) ||
+                        project.description.toLowerCase().includes(projectSearch.toLowerCase())
+                      )
+                      .map(project => (
+                        <div key={project.id} className="space-y-3">
+                          <div className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                            <div className="flex flex-col md:flex-row items-start justify-between gap-4 md:gap-0">
+                              <div className="flex-1">
+                                <h3 className="font-semibold">{project.title}</h3>
+                                <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
+                                <Badge className="mt-2">{project.specialization}</Badge>
+                              </div>
+                              <Button
+                                size="sm"
+                                onClick={() => setSelectedProject(project.id)}
+                                variant={selectedProject === project.id ? "default" : "outline"}
+                                className="w-full md:w-auto"
+                              >
+                                {selectedProject === project.id ? "Selected" : "Select"}
+                              </Button>
                             </div>
-                            <Button
-                              size="sm"
-                              onClick={() => setSelectedProject(project.id)}
-                              variant={selectedProject === project.id ? "default" : "outline"}
-                              className="w-full md:w-auto"
-                            >
-                              {selectedProject === project.id ? "Selected" : "Select"}
-                            </Button>
                           </div>
-                        </div>
 
-                        {selectedProject === project.id && (
-                          <div className="space-y-2 pl-4 pr-4">
-                            <Button
-                              onClick={handleSelectProject}
-                              className="w-full"
-                              size="lg"
-                            >
-                              Submit Project Selection
-                            </Button>
-                            <p className="text-xs text-center text-muted-foreground">
-                              {teamCapacity?.isFull
-                                ? 'All 4 team members must submit the same project to proceed with faculty assignment.'
-                                : 'Your selection will be saved. Once your team is full, all members must select the same project.'}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                          {selectedProject === project.id && (
+                            <div className="space-y-2 pl-4 pr-4">
+                              <Button
+                                onClick={handleSelectProject}
+                                className="w-full"
+                                size="lg"
+                              >
+                                Submit Project Selection
+                              </Button>
+                              <p className="text-xs text-center text-muted-foreground">
+                                {teamCapacity?.isFull
+                                  ? 'All 4 team members must submit the same project to proceed with faculty assignment.'
+                                  : 'Your selection will be saved. Once your team is full, all members must select the same project.'}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}
