@@ -800,7 +800,7 @@ export const FacultyDashboard: React.FC = () => {
                             <div>
                               <h4 className="font-semibold mb-3 flex items-center gap-2">
                                 <Users className="h-5 w-5" />
-                                Team Members ({members.length}/4)
+                                Team Members ({members.length}/3)
                               </h4>
                               <div className="space-y-2">
                                 {members.length === 0 ? (

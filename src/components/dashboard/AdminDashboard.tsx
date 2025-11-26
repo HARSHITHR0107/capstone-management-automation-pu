@@ -937,7 +937,7 @@ export const AdminDashboard: React.FC = () => {
                       <TableRow key={team.id}>
                         <TableCell className="font-medium">{team.name}</TableCell>
                         <TableCell>{team.teamNumber || 'N/A'}</TableCell>
-                        <TableCell>{team.members.length}/4 members</TableCell>
+                        <TableCell>{team.members.length}/3 members</TableCell>
                         <TableCell>{team.projectId ? 'Assigned' : 'Not assigned'}</TableCell>
                         <TableCell>
                           <Badge variant="secondary">{team.status}</Badge>
