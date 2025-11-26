@@ -419,8 +419,8 @@ export const checkTeamProjectConsensus = async (teamId: string): Promise<{
             return { hasConsensus: false, projectId: null, selections: {} };
         }
 
-        // Team must be full (4 members)
-        if (team.members.length < MAX_TEAM_SIZE) {
+        // Team must have at least 1 member
+        if (team.members.length === 0) {
             return { hasConsensus: false, projectId: null, selections: {} };
         }
 

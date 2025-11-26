@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +6,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from '@/contexts/AuthContext';
 import { getUsers, updateTeams } from '@/lib/mockData';
 import { createTeamInFirestore, updateUserTeamId, getTeamCapacity, updateUserProjectSelection, checkTeamProjectConsensus, autoAssignFacultyToTeam, updateTeamProject, getTeamProjectSelections } from '@/lib/teamService';
@@ -20,6 +28,7 @@ import { NotificationDisplay } from '@/components/notifications/NotificationDisp
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import { EmailProgressDashboard } from '@/components/email/EmailProgressDashboard';
 import { EmailDiagnostics } from '@/components/ui/EmailDiagnostics';
+import { ProjectCard } from './ProjectCard';
 
 // Marks Tab Component
 const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }) => {
@@ -226,11 +235,11 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
                         <h4 className="font-semibold">{phase.name}</h4>
                         {isEvaluated ? (
                           <Badge variant="default" className="bg-green-600">
-                            ✓ Evaluated
+                            Ã¢Å“â€œ Evaluated
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-orange-600 border-orange-300">
-                            ⏳ Pending
+                            Ã¢ÂÂ³ Pending
                           </Badge>
                         )}
                       </div>
@@ -302,7 +311,7 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
             <div className="space-y-3">
               {percentage >= 90 && (
                 <div className="flex items-start gap-2">
-                  <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white text-xs flex-shrink-0 mt-0.5">✓</div>
+                  <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white text-xs flex-shrink-0 mt-0.5">Ã¢Å“â€œ</div>
                   <div>
                     <p className="font-semibold text-green-900">Outstanding Performance!</p>
                     <p className="text-sm text-green-700">You're maintaining an excellent academic standing. Keep up the great work!</p>
@@ -311,7 +320,7 @@ const MarksTab: React.FC<{ myTeam: Team | null; user: any }> = ({ myTeam, user }
               )}
               {percentage >= 70 && percentage < 90 && (
                 <div className="flex items-start gap-2">
-                  <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs flex-shrink-0 mt-0.5">✓</div>
+                  <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs flex-shrink-0 mt-0.5">Ã¢Å“â€œ</div>
                   <div>
                     <p className="font-semibold text-blue-900">Good Progress!</p>
                     <p className="text-sm text-blue-700">You're doing well. Focus on incorporating feedback to reach excellence.</p>
@@ -406,6 +415,8 @@ export const StudentDashboard: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
   const [newTeamName, setNewTeamName] = useState('');
   const [selectedProject, setSelectedProject] = useState<string>('');
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingProjectId, setPendingProjectId] = useState<string>('');
   const [message, setMessage] = useState('');
   const [teamProjectSelections, setTeamProjectSelections] = useState<Record<string, string | null>>({});
   const [facultyGuide, setFacultyGuide] = useState<User | null>(null);
@@ -423,12 +434,12 @@ export const StudentDashboard: React.FC = () => {
 
   // Fetch users from Firestore with real-time updates
   useEffect(() => {
-    console.log('🔄 Setting up real-time listener for users...');
+    console.log('Ã°Å¸â€â€ž Setting up real-time listener for users...');
 
     const unsubscribe = onSnapshot(
       collection(db, 'users'),
       (snapshot) => {
-        console.log('📡 Users updated, processing changes...');
+        console.log('Ã°Å¸â€œÂ¡ Users updated, processing changes...');
         const firebaseUsers: User[] = [];
 
         snapshot.forEach((doc) => {
@@ -447,7 +458,7 @@ export const StudentDashboard: React.FC = () => {
           });
         });
 
-        console.log(`✅ Received ${firebaseUsers.length} users from Firestore`);
+        console.log(`Ã¢Å“â€¦ Received ${firebaseUsers.length} users from Firestore`);
         const localUsers = getUsers();
         const userMap = new Map<string, User>();
         localUsers.forEach(u => userMap.set(u.id, u));
@@ -458,26 +469,26 @@ export const StudentDashboard: React.FC = () => {
         requestNotificationPermission();
       },
       (error) => {
-        console.error('❌ Error listening to users:', error);
+        console.error('Ã¢ÂÅ’ Error listening to users:', error);
         const localUsers = getUsers();
         setUsers(localUsers);
       }
     );
 
     return () => {
-      console.log('🔌 Unsubscribing from users listener');
+      console.log('Ã°Å¸â€Å’ Unsubscribing from users listener');
       unsubscribe();
     };
   }, []);
 
   // Fetch projects from Firestore with real-time updates
   useEffect(() => {
-    console.log('🔄 Setting up real-time listener for projects...');
+    console.log('Ã°Å¸â€â€ž Setting up real-time listener for projects...');
 
     const unsubscribe = onSnapshot(
       collection(db, 'projects'),
       (snapshot) => {
-        console.log('📡 Projects updated, processing changes...');
+        console.log('Ã°Å¸â€œÂ¡ Projects updated, processing changes...');
         const updatedProjects: Project[] = [];
 
         snapshot.forEach((doc) => {
@@ -492,17 +503,17 @@ export const StudentDashboard: React.FC = () => {
           });
         });
 
-        console.log(`✅ Received ${updatedProjects.length} projects from Firestore`);
+        console.log(`Ã¢Å“â€¦ Received ${updatedProjects.length} projects from Firestore`);
         setProjects(updatedProjects);
       },
       (error) => {
-        console.error('❌ Error listening to projects:', error);
+        console.error('Ã¢ÂÅ’ Error listening to projects:', error);
         setProjects([]);
       }
     );
 
     return () => {
-      console.log('🔌 Unsubscribing from projects listener');
+      console.log('Ã°Å¸â€Å’ Unsubscribing from projects listener');
       unsubscribe();
     };
   }, []);
@@ -511,12 +522,12 @@ export const StudentDashboard: React.FC = () => {
   useEffect(() => {
     if (!user?.id) return;
 
-    console.log('🔄 Setting up real-time listener for teams...');
+    console.log('Ã°Å¸â€â€ž Setting up real-time listener for teams...');
 
     const unsubscribe = onSnapshot(
       collection(db, 'teams'),
       (snapshot) => {
-        console.log('📡 Teams updated, processing changes...');
+        console.log('Ã°Å¸â€œÂ¡ Teams updated, processing changes...');
         const updatedTeams: Team[] = [];
 
         snapshot.forEach((doc) => {
@@ -536,7 +547,7 @@ export const StudentDashboard: React.FC = () => {
           });
         });
 
-        console.log(`✅ Received ${updatedTeams.length} teams from Firestore`);
+        console.log(`Ã¢Å“â€¦ Received ${updatedTeams.length} teams from Firestore`);
         setTeams(updatedTeams);
 
         const userTeam = updatedTeams.find(team =>
@@ -544,10 +555,10 @@ export const StudentDashboard: React.FC = () => {
         );
 
         if (userTeam) {
-          console.log(`👥 User is in team: ${userTeam.name} with ${userTeam.members.length} members`);
+          console.log(`Ã°Å¸â€˜Â¥ User is in team: ${userTeam.name} with ${userTeam.members.length} members`);
           setMyTeam(userTeam);
         } else {
-          console.log('👤 User is not in any team');
+          console.log('Ã°Å¸â€˜Â¤ User is not in any team');
           setMyTeam(null);
           setTeamMembers([]);
         }
@@ -555,14 +566,14 @@ export const StudentDashboard: React.FC = () => {
         updateTeams(updatedTeams);
       },
       (error) => {
-        console.error('❌ Error listening to teams:', error);
+        console.error('Ã¢ÂÅ’ Error listening to teams:', error);
         setTeams([]);
         setMyTeam(null);
       }
     );
 
     return () => {
-      console.log('🔌 Unsubscribing from teams listener');
+      console.log('Ã°Å¸â€Å’ Unsubscribing from teams listener');
       unsubscribe();
     };
   }, [user?.id]);
@@ -575,7 +586,7 @@ export const StudentDashboard: React.FC = () => {
         return;
       }
 
-      console.log(`👥 Fetching details for ${myTeam.members.length} team members...`);
+      console.log(`Ã°Å¸â€˜Â¥ Fetching details for ${myTeam.members.length} team members...`);
       const memberDetails: User[] = [];
 
       for (const memberId of myTeam.members) {
@@ -583,7 +594,7 @@ export const StudentDashboard: React.FC = () => {
 
         if (!member) {
           try {
-            console.log(`🔍 Fetching member ${memberId} from Firestore...`);
+            console.log(`Ã°Å¸â€Â Fetching member ${memberId} from Firestore...`);
             const memberDoc = await getDoc(doc(db, 'users', memberId));
             if (memberDoc.exists()) {
               const data = memberDoc.data();
@@ -599,12 +610,12 @@ export const StudentDashboard: React.FC = () => {
                 teamId: data.teamId,
                 createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
               };
-              console.log(`✅ Found member: ${member.name}`);
+              console.log(`Ã¢Å“â€¦ Found member: ${member.name}`);
             } else {
-              console.warn(`⚠️ Member ${memberId} not found in Firestore`);
+              console.warn(`Ã¢Å¡Â Ã¯Â¸Â Member ${memberId} not found in Firestore`);
             }
           } catch (error) {
-            console.error(`❌ Error fetching member ${memberId}:`, error);
+            console.error(`Ã¢ÂÅ’ Error fetching member ${memberId}:`, error);
           }
         }
 
@@ -613,7 +624,7 @@ export const StudentDashboard: React.FC = () => {
         }
       }
 
-      console.log(`✅ Loaded ${memberDetails.length} team members`);
+      console.log(`Ã¢Å“â€¦ Loaded ${memberDetails.length} team members`);
       setTeamMembers(memberDetails);
     };
 
@@ -654,7 +665,7 @@ export const StudentDashboard: React.FC = () => {
         let guide = users.find(u => u.id === myTeam.guideId && u.role === 'faculty');
 
         if (!guide) {
-          console.log(`🔍 Fetching faculty guide ${myTeam.guideId} from Firestore...`);
+          console.log(`Ã°Å¸â€Â Fetching faculty guide ${myTeam.guideId} from Firestore...`);
           const guideDoc = await getDoc(doc(db, 'users', myTeam.guideId));
           if (guideDoc.exists()) {
             const data = guideDoc.data();
@@ -675,15 +686,15 @@ export const StudentDashboard: React.FC = () => {
               school: data.school,
               createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
             };
-            console.log(`✅ Found faculty guide: ${guide.name}`);
+            console.log(`Ã¢Å“â€¦ Found faculty guide: ${guide.name}`);
           } else {
-            console.warn(`⚠️ Faculty guide ${myTeam.guideId} not found in Firestore`);
+            console.warn(`Ã¢Å¡Â Ã¯Â¸Â Faculty guide ${myTeam.guideId} not found in Firestore`);
           }
         }
 
         setFacultyGuide(guide || null);
       } catch (error) {
-        console.error(`❌ Error fetching faculty guide:`, error);
+        console.error(`Ã¢ÂÅ’ Error fetching faculty guide:`, error);
         setFacultyGuide(null);
       }
     };
@@ -785,7 +796,7 @@ export const StudentDashboard: React.FC = () => {
       try {
         new URL(newMaterialUrl);
       } catch {
-        setMessage('❌ Please enter a valid URL');
+        setMessage('Ã¢ÂÅ’ Please enter a valid URL');
         setTimeout(() => setMessage(''), 3000);
         return;
       }
@@ -810,11 +821,11 @@ export const StudentDashboard: React.FC = () => {
 
       setNewMaterialUrl('');
       setNewMaterialTitle('');
-      setMessage('✅ Project material added successfully!');
+      setMessage('Ã¢Å“â€¦ Project material added successfully!');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       console.error('Failed to add material:', error);
-      setMessage('❌ Failed to add project material. Please try again.');
+      setMessage('Ã¢ÂÅ’ Failed to add project material. Please try again.');
       setTimeout(() => setMessage(''), 3000);
     } finally {
       setIsAddingMaterial(false);
@@ -829,7 +840,7 @@ export const StudentDashboard: React.FC = () => {
 
     // Only allow deletion by the person who added it or team leader
     if (material.addedBy !== user.id && myTeam.leaderId !== user.id) {
-      setMessage('❌ Only the person who added this link or the team leader can delete it.');
+      setMessage('Ã¢ÂÅ’ Only the person who added this link or the team leader can delete it.');
       setTimeout(() => setMessage(''), 3000);
       return;
     }
@@ -843,11 +854,11 @@ export const StudentDashboard: React.FC = () => {
         })
       });
 
-      setMessage('✅ Project material deleted successfully!');
+      setMessage('Ã¢Å“â€¦ Project material deleted successfully!');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       console.error('Failed to delete material:', error);
-      setMessage('❌ Failed to delete project material. Please try again.');
+      setMessage('Ã¢ÂÅ’ Failed to delete project material. Please try again.');
       setTimeout(() => setMessage(''), 3000);
     }
   };
@@ -892,14 +903,14 @@ export const StudentDashboard: React.FC = () => {
     }
   };
 
-  const handleSelectProject = async () => {
-    if (!selectedProject || !myTeam || !user) return;
+  const submitProjectSelection = async (projectId: string) => {
+    if (!projectId || !myTeam || !user) return;
 
     try {
-      console.log(`📤 Submitting project selection: ${selectedProject} for team ${myTeam.id}`);
+      console.log(`ðŸ“¥ Submitting project selection: ${projectId} for team ${myTeam.id}`);
 
-      await updateUserProjectSelection(user.id, selectedProject);
-      console.log(`✅ User ${user.id} project selection saved to Firestore`);
+      await updateUserProjectSelection(user.id, projectId);
+      console.log(`âœ… User ${user.id} project selection saved to Firestore`);
 
       const updatedSelections = await getTeamProjectSelections(myTeam.id);
       setTeamProjectSelections(updatedSelections);
@@ -907,46 +918,57 @@ export const StudentDashboard: React.FC = () => {
       const consensus = await checkTeamProjectConsensus(myTeam.id);
 
       if (consensus.hasConsensus && consensus.projectId) {
-        console.log(`🎯 Team consensus reached! All 4 members selected project: ${consensus.projectId}`);
+        console.log(`ðŸŽ¯ Team consensus reached! All members selected project: ${consensus.projectId}`);
 
         const projectDoc = await getDoc(doc(db, 'projects', consensus.projectId));
         if (projectDoc.exists()) {
           const projectData = projectDoc.data();
 
           if (projectData.isAssigned && projectData.guideId) {
-            setMessage(`⚠️ This project has already been assigned to another team. Please select a different project.`);
+            setMessage(`âš ï¸ This project has already been assigned to another team. Please select a different project.`);
             setTimeout(() => setMessage(''), 8000);
             return;
           }
         }
 
         await updateTeamProject(myTeam.id, consensus.projectId);
-        console.log(`✅ Project ${consensus.projectId} stored in teams collection for team ${myTeam.id}`);
+        console.log(`âœ… Project ${consensus.projectId} stored in teams collection for team ${myTeam.id}`);
 
         const assignmentResult = await autoAssignFacultyToTeam(myTeam.id, consensus.projectId);
 
         if (assignmentResult.success) {
-          setMessage(`✅ Project submitted successfully! Faculty guide has been automatically assigned to your team.`);
+          setMessage(`âœ… Project submitted successfully! Faculty guide has been automatically assigned to your team.`);
           setSelectedProject('');
         } else {
-          setMessage(`✅ Project submitted! ${assignmentResult.message}`);
+          setMessage(`âœ… Project submitted! ${assignmentResult.message}`);
         }
       } else {
         const selectedCount = Object.values(consensus.selections).filter(p => p !== null).length;
         const totalMembers = myTeam.members.length;
 
         if (selectedCount < totalMembers) {
-          setMessage(`✅ Project selection submitted! Waiting for all team members to select the same project (${selectedCount}/${totalMembers} selected).`);
+          setMessage(`âœ… Project selection submitted! Waiting for all team members to select the same project (${selectedCount}/${totalMembers} selected).`);
         } else {
-          setMessage(`⚠️ All members have selected projects, but they don't match. Please coordinate with your team to select the same project.`);
+          setMessage(`âš ï¸ All members have selected projects, but they don't match. Please coordinate with your team to select the same project.`);
         }
       }
 
       setTimeout(() => setMessage(''), 8000);
     } catch (error) {
-      console.error('❌ Failed to submit project selection:', error);
+      console.error('âŒ Failed to submit project selection:', error);
       setMessage('Failed to submit project selection. Please try again.');
       setTimeout(() => setMessage(''), 5000);
+    }
+  };
+
+  const handleSelectProject = () => {
+    if (!selectedProject || !myTeam) return;
+
+    if (myTeam.members.length < 3) {
+      setPendingProjectId(selectedProject);
+      setShowConfirmDialog(true);
+    } else {
+      submitProjectSelection(selectedProject);
     }
   };
 
@@ -994,7 +1016,7 @@ export const StudentDashboard: React.FC = () => {
           </AlertDescription>
         </Alert>
       )}
-      {message && (<Alert className={message.includes('successfully') || message.includes('sent to') || message.includes('✅') ? 'border-green-500 bg-green-50' : message.includes('❌') || message.includes('⚠️') ? 'border-red-500 bg-red-50' : ''}><AlertDescription>{message}</AlertDescription></Alert>)}
+      {message && (<Alert className={message.includes('successfully') || message.includes('sent to') || message.includes('Ã¢Å“â€¦') ? 'border-green-500 bg-green-50' : message.includes('Ã¢ÂÅ’') || message.includes('Ã¢Å¡Â Ã¯Â¸Â') ? 'border-red-500 bg-red-50' : ''}><AlertDescription>{message}</AlertDescription></Alert>)}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">My Team</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{myTeam ? myTeam.name : 'No Team'}</div><p className="text-xs text-muted-foreground">{myTeam ? (<span className="flex items-center gap-2">{teamMembers.length}/3 members{teamCapacity?.isFull && (<Badge variant="secondary" className="text-xs">Full</Badge>)}</span>) : ('Create or join a team')}</p></CardContent></Card>
@@ -1054,7 +1076,7 @@ export const StudentDashboard: React.FC = () => {
                     <Badge className="mt-2">{myProject.specialization}</Badge>
                     {myTeam.guideId && (
                       <div className="mt-3 pt-3 border-t">
-                        <p className="text-sm font-medium text-green-700">✅ Faculty guide assigned to your team</p>
+                        <p className="text-sm font-medium text-green-700">Ã¢Å“â€¦ Faculty guide assigned to your team</p>
                       </div>
                     )}
                   </div>
@@ -1112,42 +1134,14 @@ export const StudentDashboard: React.FC = () => {
                         project.description.toLowerCase().includes(projectSearch.toLowerCase())
                       )
                       .map(project => (
-                        <div key={project.id} className="space-y-3">
-                          <div className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                            <div className="flex flex-col md:flex-row items-start justify-between gap-4 md:gap-0">
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold break-words">{project.title}</h3>
-                                <p className="text-sm text-muted-foreground mt-1 break-words">{project.description}</p>
-                                <Badge className="mt-2">{project.specialization}</Badge>
-                              </div>
-                              <Button
-                                size="sm"
-                                onClick={() => setSelectedProject(project.id)}
-                                variant={selectedProject === project.id ? "default" : "outline"}
-                                className="w-full md:w-auto"
-                              >
-                                {selectedProject === project.id ? "Selected" : "Select"}
-                              </Button>
-                            </div>
-                          </div>
-
-                          {selectedProject === project.id && (
-                            <div className="space-y-2 pl-4 pr-4">
-                              <Button
-                                onClick={handleSelectProject}
-                                className="w-full"
-                                size="lg"
-                              >
-                                Submit Project Selection
-                              </Button>
-                              <p className="text-xs text-center text-muted-foreground">
-                                {teamCapacity?.isFull
-                                  ? 'All 4 team members must submit the same project to proceed with faculty assignment.'
-                                  : 'Your selection will be saved. Once your team is full, all members must select the same project.'}
-                              </p>
-                            </div>
-                          )}
-                        </div>
+                        <ProjectCard
+                          key={project.id}
+                          project={project}
+                          isSelected={selectedProject === project.id}
+                          onSelect={setSelectedProject}
+                          onSubmit={handleSelectProject}
+                          teamCapacity={teamCapacity}
+                        />
                       ))}
                   </div>
                 </div>
@@ -1245,7 +1239,7 @@ export const StudentDashboard: React.FC = () => {
                                   <ExternalLink className="h-3 w-3 flex-shrink-0" />
                                 </a>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  Added by {material.addedByName} • {material.addedAt.toLocaleDateString()}
+                                  Added by {material.addedByName} Ã¢â‚¬Â¢ {material.addedAt.toLocaleDateString()}
                                 </p>
                               </div>
                             </div>
@@ -1654,6 +1648,24 @@ export const StudentDashboard: React.FC = () => {
 
         <TabsContent value="email" className="space-y-4"><EmailSetupStatus /><EmailDiagnostics /></TabsContent>
       </Tabs>
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Project Selection</DialogTitle>
+            <DialogDescription>
+              Your team has fewer than 3 members. Are you sure you want to finalize your project selection?
+              You won't be able to add more members after this.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>Cancel</Button>
+            <Button onClick={() => {
+                submitProjectSelection(pendingProjectId);
+                setShowConfirmDialog(false);
+            }}>Confirm</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
