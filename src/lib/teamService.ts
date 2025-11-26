@@ -22,7 +22,7 @@ import { Team, TeamInvite } from '@/types/user';
 /**
  * Constants
  */
-const MAX_TEAM_SIZE = 4;
+const MAX_TEAM_SIZE = 3;
 const MIN_TEAM_SIZE = 1;
 
 /**
@@ -31,15 +31,15 @@ const MIN_TEAM_SIZE = 1;
 export const canAddMemberToTeam = async (teamId: string): Promise<{ canAdd: boolean; reason?: string }> => {
     try {
         const team = await getTeamFromFirestore(teamId);
-        
+
         if (!team) {
             return { canAdd: false, reason: 'Team not found' };
         }
-        
+
         if (team.members.length >= MAX_TEAM_SIZE) {
             return { canAdd: false, reason: `Team is full. Maximum team size is ${MAX_TEAM_SIZE} members.` };
         }
-        
+
         return { canAdd: true };
     } catch (error) {
         console.error('Error checking team capacity:', error);
@@ -54,7 +54,7 @@ export const getTeamCapacity = (team: Team): { current: number; max: number; ava
     const current = team.members.length;
     const pendingInvites = team.invites.filter(inv => inv.status === 'pending').length;
     const potential = current + pendingInvites;
-    
+
     return {
         current,
         max: MAX_TEAM_SIZE,
@@ -69,7 +69,7 @@ export const getTeamCapacity = (team: Team): { current: number; max: number; ava
 export const createTeamInFirestore = async (team: Omit<Team, 'id'>): Promise<string> => {
     try {
         console.log('📝 Creating team in Firestore:', team.name);
-        
+
         const teamRef = await addDoc(collection(db, 'teams'), {
             name: team.name,
             teamNumber: team.teamNumber || '',
@@ -80,7 +80,7 @@ export const createTeamInFirestore = async (team: Omit<Team, 'id'>): Promise<str
             invites: team.invites || [],
             createdAt: serverTimestamp()
         });
-        
+
         console.log('✅ Team created in Firestore:', teamRef.id);
         return teamRef.id;
     } catch (error) {
@@ -96,11 +96,11 @@ export const getTeamFromFirestore = async (teamId: string): Promise<Team | null>
     try {
         const teamRef = doc(db, 'teams', teamId);
         const teamSnap = await getDoc(teamRef);
-        
+
         if (!teamSnap.exists()) {
             return null;
         }
-        
+
         const data = teamSnap.data();
         return {
             id: teamSnap.id,
@@ -130,40 +130,40 @@ export const acceptTeamInvitation = async (
 ): Promise<void> => {
     try {
         console.log(`✅ Accepting invitation for user ${userId} to team ${teamId}`);
-        
+
         // Check if team has space
         const capacityCheck = await canAddMemberToTeam(teamId);
         if (!capacityCheck.canAdd) {
             throw new Error(capacityCheck.reason || 'Cannot add member to team');
         }
-        
+
         const teamRef = doc(db, 'teams', teamId);
         const teamDoc = await getDoc(teamRef);
-        
+
         if (!teamDoc.exists()) {
             throw new Error('Team not found');
         }
-        
+
         const teamData = teamDoc.data();
         const invites = teamData.invites || [];
-        
+
         // Update the invite status to 'accepted'
         const updatedInvites = invites.map((invite: TeamInvite) =>
             invite.id === inviteId
                 ? { ...invite, status: 'accepted' as const, acceptedAt: new Date() }
                 : invite
         );
-        
+
         // Update team document: add member and update invite status
         await updateDoc(teamRef, {
             members: arrayUnion(userId),
             invites: updatedInvites,
             updatedAt: serverTimestamp()
         });
-        
+
         // Update user document with teamId
         await updateUserTeamId(userId, teamId);
-        
+
         console.log('✅ Invitation accepted successfully');
     } catch (error) {
         console.error('❌ Error accepting invitation:', error);
@@ -181,29 +181,29 @@ export const rejectTeamInvitation = async (
 ): Promise<void> => {
     try {
         console.log(`❌ Rejecting invitation ${inviteId} for team ${teamId}`);
-        
+
         const teamRef = doc(db, 'teams', teamId);
         const teamDoc = await getDoc(teamRef);
-        
+
         if (!teamDoc.exists()) {
             throw new Error('Team not found');
         }
-        
+
         const teamData = teamDoc.data();
         const invites = teamData.invites || [];
-        
+
         // Update the invite status to 'rejected'
         const updatedInvites = invites.map((invite: TeamInvite) =>
             invite.id === inviteId
                 ? { ...invite, status: 'rejected' as const, rejectedAt: new Date() }
                 : invite
         );
-        
+
         await updateDoc(teamRef, {
             invites: updatedInvites,
             updatedAt: serverTimestamp()
         });
-        
+
         console.log('✅ Invitation rejected successfully');
     } catch (error) {
         console.error('❌ Error rejecting invitation:', error);
@@ -221,29 +221,29 @@ export const cancelTeamInvitation = async (
 ): Promise<void> => {
     try {
         console.log(`🚫 Cancelling invitation ${inviteId} for team ${teamId}`);
-        
+
         const teamRef = doc(db, 'teams', teamId);
         const teamDoc = await getDoc(teamRef);
-        
+
         if (!teamDoc.exists()) {
             throw new Error('Team not found');
         }
-        
+
         const teamData = teamDoc.data();
         const invites = teamData.invites || [];
-        
+
         // Update the invite status to 'cancelled'
         const updatedInvites = invites.map((invite: TeamInvite) =>
             invite.id === inviteId
                 ? { ...invite, status: 'cancelled' as const, cancelledAt: new Date() }
                 : invite
         );
-        
+
         await updateDoc(teamRef, {
             invites: updatedInvites,
             updatedAt: serverTimestamp()
         });
-        
+
         console.log('✅ Invitation cancelled successfully');
     } catch (error) {
         console.error('❌ Error cancelling invitation:', error);
@@ -257,37 +257,37 @@ export const cancelTeamInvitation = async (
 export const addMemberToTeam = async (teamId: string, userId: string): Promise<boolean> => {
     try {
         console.log(`➕ Adding user ${userId} to team ${teamId}`);
-        
+
         // Check team capacity first
         const capacityCheck = await canAddMemberToTeam(teamId);
         if (!capacityCheck.canAdd) {
             console.error('❌', capacityCheck.reason);
             return false;
         }
-        
+
         const teamRef = doc(db, 'teams', teamId);
         const teamSnap = await getDoc(teamRef);
-        
+
         if (!teamSnap.exists()) {
             console.error('❌ Team not found:', teamId);
             return false;
         }
-        
+
         const teamData = teamSnap.data();
         const currentMembers = teamData.members || [];
-        
+
         // Check if user is already a member
         if (currentMembers.includes(userId)) {
             console.log('⚠️ User is already a team member');
             return true; // Already a member, consider it success
         }
-        
+
         // Add user to members array
         await updateDoc(teamRef, {
             members: arrayUnion(userId),
             updatedAt: serverTimestamp()
         });
-        
+
         console.log('✅ Member added to team successfully');
         return true;
     } catch (error) {
@@ -302,16 +302,16 @@ export const addMemberToTeam = async (teamId: string, userId: string): Promise<b
 export const removeMemberFromTeam = async (teamId: string, userId: string): Promise<boolean> => {
     try {
         console.log(`➖ Removing user ${userId} from team ${teamId}`);
-        
+
         const teamRef = doc(db, 'teams', teamId);
         await updateDoc(teamRef, {
             members: arrayRemove(userId),
             updatedAt: serverTimestamp()
         });
-        
+
         // Clear user's teamId
         await updateUserTeamId(userId, null);
-        
+
         console.log('✅ Member removed from team successfully');
         return true;
     } catch (error) {
@@ -330,7 +330,7 @@ export const updateTeamStatus = async (teamId: string, status: Team['status']): 
             status,
             updatedAt: serverTimestamp()
         });
-        
+
         console.log(`✅ Team status updated to: ${status}`);
         return true;
     } catch (error) {
@@ -349,7 +349,7 @@ export const updateTeamProject = async (teamId: string, projectId: string | null
             projectId,
             updatedAt: serverTimestamp()
         });
-        
+
         console.log(`✅ Team project updated to: ${projectId}`);
         return true;
     } catch (error) {
@@ -369,7 +369,7 @@ export const updateUserProjectSelection = async (userId: string, projectId: stri
             projectSelectedAt: serverTimestamp(),
             updatedAt: serverTimestamp()
         });
-        
+
         console.log(`✅ User ${userId} project selection updated to: ${projectId}`);
         return true;
     } catch (error) {
@@ -389,7 +389,7 @@ export const getTeamProjectSelections = async (teamId: string): Promise<Record<s
         }
 
         const selections: Record<string, string | null> = {};
-        
+
         for (const memberId of team.members) {
             const memberDoc = await getDoc(doc(db, 'users', memberId));
             if (memberDoc.exists()) {
@@ -419,16 +419,16 @@ export const checkTeamProjectConsensus = async (teamId: string): Promise<{
             return { hasConsensus: false, projectId: null, selections: {} };
         }
 
-        // Team must be full (4 members)
-        if (team.members.length < MAX_TEAM_SIZE) {
+        // Team must have at least 1 member (can be 1, 2, or 3 members)
+        if (team.members.length < MIN_TEAM_SIZE) {
             return { hasConsensus: false, projectId: null, selections: {} };
         }
 
         const selections = await getTeamProjectSelections(teamId);
-        
+
         // Check if all members have selected a project
         const allSelected = team.members.every(memberId => selections[memberId] !== null && selections[memberId] !== undefined);
-        
+
         if (!allSelected) {
             return { hasConsensus: false, projectId: null, selections };
         }
@@ -462,7 +462,7 @@ export const autoAssignFacultyToTeam = async (teamId: string, projectId: string)
 }> => {
     try {
         console.log(`🎓 Auto-assigning faculty to team ${teamId} for project ${projectId}`);
-        
+
         // Get project details
         const projectDoc = await getDoc(doc(db, 'projects', projectId));
         if (!projectDoc.exists()) {
@@ -470,13 +470,13 @@ export const autoAssignFacultyToTeam = async (teamId: string, projectId: string)
         }
 
         const projectData = projectDoc.data();
-        
+
         // FIRST COME FIRST SERVE: Check if project is already assigned
         if (projectData.isAssigned && projectData.guideId) {
             console.warn(`⚠️ Project ${projectId} is already assigned to another team (first come first serve)`);
             return { success: false, message: 'This project has already been assigned to another team. Please select a different project.' };
         }
-        
+
         const projectSpecialization = projectData.specialization || 'General';
 
         // Get team details
@@ -524,7 +524,7 @@ export const autoAssignFacultyToTeam = async (teamId: string, projectId: string)
 
         // Find faculty with available slots
         const availableFaculty = facultyList.filter(f => f.assignedTeams < f.maxTeams);
-        
+
         if (availableFaculty.length === 0) {
             console.warn('⚠️ No available faculty found with matching specialization');
             // Fallback: assign any available faculty
@@ -534,7 +534,7 @@ export const autoAssignFacultyToTeam = async (teamId: string, projectId: string)
             );
             const allFacultySnapshot = await getDocs(allFacultyQuery);
             const allFaculty: Array<{ id: string; assignedTeams: number; maxTeams: number }> = [];
-            
+
             allFacultySnapshot.forEach((doc) => {
                 const data = doc.data();
                 allFaculty.push({
@@ -606,7 +606,7 @@ export const getAllTeamsFromFirestore = async (): Promise<Team[]> => {
     try {
         const teamsSnapshot = await getDocs(collection(db, 'teams'));
         const teams: Team[] = [];
-        
+
         teamsSnapshot.forEach((doc) => {
             const data = doc.data();
             teams.push({
@@ -621,7 +621,7 @@ export const getAllTeamsFromFirestore = async (): Promise<Team[]> => {
                 createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date()
             });
         });
-        
+
         return teams;
     } catch (error) {
         console.error('❌ Failed to get teams from Firestore:', error);
@@ -636,11 +636,11 @@ export const getUserTeams = async (userId: string): Promise<Team[]> => {
     try {
         const teamsSnapshot = await getDocs(collection(db, 'teams'));
         const teams: Team[] = [];
-        
+
         teamsSnapshot.forEach((doc) => {
             const data = doc.data();
             const members = data.members || [];
-            
+
             // Check if user is a member or leader
             if (members.includes(userId) || data.leaderId === userId) {
                 teams.push({
@@ -656,7 +656,7 @@ export const getUserTeams = async (userId: string): Promise<Team[]> => {
                 });
             }
         });
-        
+
         return teams;
     } catch (error) {
         console.error('❌ Failed to get user teams:', error);
@@ -671,16 +671,16 @@ export const getUserPendingInvitations = async (userId: string): Promise<Array<T
     try {
         const teamsSnapshot = await getDocs(collection(db, 'teams'));
         const invitedTeams: Array<Team & { inviteId: string }> = [];
-        
+
         teamsSnapshot.forEach((doc) => {
             const data = doc.data();
             const invites = data.invites || [];
-            
+
             // Find pending invites for this user
             const userInvite = invites.find(
                 (invite: TeamInvite) => invite.invitedUserId === userId && invite.status === 'pending'
             );
-            
+
             if (userInvite) {
                 invitedTeams.push({
                     id: doc.id,
@@ -696,7 +696,7 @@ export const getUserPendingInvitations = async (userId: string): Promise<Array<T
                 });
             }
         });
-        
+
         return invitedTeams;
     } catch (error) {
         console.error('❌ Failed to get user pending invitations:', error);
@@ -714,7 +714,7 @@ export const updateUserTeamId = async (userId: string, teamId: string | null): P
             teamId: teamId,
             updatedAt: serverTimestamp()
         });
-        
+
         console.log(`✅ User ${userId} teamId updated to: ${teamId}`);
         return true;
     } catch (error) {
@@ -733,35 +733,35 @@ export const addInvitationToTeam = async (
 ): Promise<string> => {
     try {
         console.log(`📨 Adding invitation for user ${invitedUserId} to team ${teamId}`);
-        
+
         const teamRef = doc(db, 'teams', teamId);
         const teamDoc = await getDoc(teamRef);
-        
+
         if (!teamDoc.exists()) {
             throw new Error('Team not found');
         }
-        
+
         const teamData = teamDoc.data();
         const currentMembers = teamData.members || [];
         const invites = teamData.invites || [];
-        
+
         // Check current team size + pending invites
         const pendingInvites = invites.filter((inv: TeamInvite) => inv.status === 'pending');
         const potentialSize = currentMembers.length + pendingInvites.length;
-        
+
         if (potentialSize >= MAX_TEAM_SIZE) {
             throw new Error(`Cannot send more invitations. Team is at maximum capacity (${MAX_TEAM_SIZE} members including pending invites).`);
         }
-        
+
         // Check if user already has a pending invitation
         const existingInvite = invites.find(
             (invite: TeamInvite) => invite.invitedUserId === invitedUserId && invite.status === 'pending'
         );
-        
+
         if (existingInvite) {
             throw new Error('User already has a pending invitation');
         }
-        
+
         // Create new invitation
         const newInvite: TeamInvite = {
             id: `invite_${Date.now()}_${Math.random().toString(36).substring(7)}`,
@@ -771,13 +771,13 @@ export const addInvitationToTeam = async (
             status: 'pending',
             createdAt: new Date()
         };
-        
+
         // Add invitation to team
         await updateDoc(teamRef, {
             invites: [...invites, newInvite],
             updatedAt: serverTimestamp()
         });
-        
+
         console.log('✅ Invitation added successfully');
         return newInvite.id;
     } catch (error) {
