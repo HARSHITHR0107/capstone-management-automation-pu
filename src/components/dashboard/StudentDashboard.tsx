@@ -1022,7 +1022,6 @@ export const StudentDashboard: React.FC = () => {
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="email" className="whitespace-nowrap">Email Setup</TabsTrigger>
         </TabsList>
 
         <TabsContent value="team" className="space-y-4">
