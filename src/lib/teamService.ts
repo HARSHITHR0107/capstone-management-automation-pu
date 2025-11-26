@@ -22,7 +22,7 @@ import { Team, TeamInvite } from '@/types/user';
 /**
  * Constants
  */
-const MAX_TEAM_SIZE = 4;
+const MAX_TEAM_SIZE = 3;
 const MIN_TEAM_SIZE = 1;
 
 /**
