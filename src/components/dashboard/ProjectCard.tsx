@@ -49,7 +49,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                     </Button>
                     <p className="text-xs text-center text-muted-foreground">
                         {teamCapacity?.isFull
-                            ? 'All 4 team members must submit the same project to proceed with faculty assignment.'
+                            ? 'All team members must submit the same project to proceed with faculty assignment.'
                             : 'Your selection will be saved. Once your team is full, all members must select the same project.'}
                     </p>
                 </div>
