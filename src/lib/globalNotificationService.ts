@@ -30,6 +30,7 @@ export interface GlobalNotification {
     sentByName: string;
     createdAt: Date;
     readBy: string[]; // Array of user IDs who have read this notification
+    attachmentLinks?: string[]; // Optional array of links (Google Drive, etc.)
 }
 
 export interface SendNotificationData {
@@ -38,6 +39,7 @@ export interface SendNotificationData {
     targetRoles: ('student' | 'faculty' | 'admin')[];
     sentBy: string;
     sentByName: string;
+    attachmentLinks?: string[]; // Optional array of links to attach
 }
 
 /**
@@ -56,6 +58,7 @@ export const sendGlobalNotification = async (
             sentBy: data.sentBy,
             sentByName: data.sentByName,
             readBy: [],
+            attachmentLinks: data.attachmentLinks || [],
             createdAt: serverTimestamp(),
         };
 
@@ -148,6 +151,7 @@ export const getGlobalNotifications = async (
                     sentByName: data.sentByName || 'Admin',
                     createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
                     readBy: data.readBy || [],
+                    attachmentLinks: data.attachmentLinks || [],
                 });
             });
 
@@ -177,6 +181,7 @@ export const getGlobalNotifications = async (
                             sentByName: data.sentByName || 'Admin',
                             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
                             readBy: data.readBy || [],
+                            attachmentLinks: data.attachmentLinks || [],
                         });
                     }
                 });
@@ -226,6 +231,7 @@ export const subscribeToGlobalNotifications = (
                         sentByName: data.sentByName || 'Admin',
                         createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
                         readBy: data.readBy || [],
+                        attachmentLinks: data.attachmentLinks || [],
                     });
                 });
 
@@ -258,6 +264,7 @@ export const subscribeToGlobalNotifications = (
                                     sentByName: data.sentByName || 'Admin',
                                     createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
                                     readBy: data.readBy || [],
+                                    attachmentLinks: data.attachmentLinks || [],
                                 });
                             }
                         });
@@ -300,6 +307,7 @@ export const subscribeToGlobalNotifications = (
                     sentByName: data.sentByName || 'Admin',
                     createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
                     readBy: data.readBy || [],
+                    attachmentLinks: data.attachmentLinks || [],
                 });
             });
 
@@ -421,6 +429,7 @@ export const getAllSentNotifications = async (): Promise<GlobalNotification[]> =
                 sentByName: data.sentByName || 'Admin',
                 createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
                 readBy: data.readBy || [],
+                attachmentLinks: data.attachmentLinks || [],
             });
         });
 

@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { User, Project, Team } from '@/types/user';
-import { Users, BookOpen, UserCheck, TrendingUp, FileSpreadsheet, Database, Mail, Phone, Briefcase, Bell, MessageSquare, Send } from 'lucide-react';
+import { Users, BookOpen, UserCheck, TrendingUp, FileSpreadsheet, Database, Mail, Phone, Briefcase, Bell, MessageSquare, Send, Link, Plus, Trash2 } from 'lucide-react';
 import { ExcelUpload } from '@/components/admin/ExcelUpload';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where, addDoc, serverTimestamp, updateDoc, doc, deleteDoc, onSnapshot } from 'firebase/firestore';
@@ -38,7 +38,8 @@ export const AdminDashboard: React.FC = () => {
   const [newNotification, setNewNotification] = useState({
     title: '',
     message: '',
-    targetRoles: ['student', 'faculty'] as ('student' | 'faculty' | 'admin')[]
+    targetRoles: ['student', 'faculty'] as ('student' | 'faculty' | 'admin')[],
+    attachmentLinks: [''] as string[]
   });
   const [isSendingNotification, setIsSendingNotification] = useState(false);
 
@@ -279,6 +280,7 @@ export const AdminDashboard: React.FC = () => {
         targetRoles: newNotification.targetRoles,
         sentBy: user.id,
         sentByName: user.name || 'Admin',
+        attachmentLinks: newNotification.attachmentLinks.filter(link => link.trim() !== '')
       });
 
       if (result.success) {
@@ -287,6 +289,7 @@ export const AdminDashboard: React.FC = () => {
           title: '',
           message: '',
           targetRoles: ['student', 'faculty'],
+          attachmentLinks: ['']
         });
         setNotificationDialogOpen(false);
       } else {
@@ -439,6 +442,42 @@ export const AdminDashboard: React.FC = () => {
                         />
                       </div>
                       <div>
+                        <Label>Attachment Links (Optional)</Label>
+                        {newNotification.attachmentLinks.map((link, index) => (
+                          <div key={index} className="flex gap-2 mt-2">
+                            <Input
+                              value={link}
+                              onChange={(e) => {
+                                const newLinks = [...newNotification.attachmentLinks];
+                                newLinks[index] = e.target.value;
+                                setNewNotification({ ...newNotification, attachmentLinks: newLinks });
+                              }}
+                              placeholder="https://drive.google.com/..."
+                            />
+                            {index === newNotification.attachmentLinks.length - 1 ? (
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setNewNotification({ ...newNotification, attachmentLinks: [...newNotification.attachmentLinks, ''] })}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => {
+                                  const newLinks = newNotification.attachmentLinks.filter((_, i) => i !== index);
+                                  setNewNotification({ ...newNotification, attachmentLinks: newLinks });
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <div>
                         <Label>Target Audience *</Label>
                         <div className="flex flex-wrap gap-3 mt-2">
                           <div className="flex items-center space-x-2">
@@ -507,6 +546,7 @@ export const AdminDashboard: React.FC = () => {
                             title: '',
                             message: '',
                             targetRoles: ['student', 'faculty'],
+                            attachmentLinks: ['']
                           });
                         }}
                         disabled={isSendingNotification}
@@ -550,6 +590,25 @@ export const AdminDashboard: React.FC = () => {
                               <CardDescription className="mt-2 whitespace-pre-wrap">
                                 {notification.message}
                               </CardDescription>
+                              {notification.attachmentLinks && notification.attachmentLinks.length > 0 && (
+                                <div className="mt-4 space-y-2">
+                                  <p className="text-sm font-medium text-muted-foreground">Attachments:</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {notification.attachmentLinks.map((link, index) => (
+                                      <a
+                                        key={index}
+                                        href={link}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 text-sm text-blue-600 hover:underline bg-blue-50 px-3 py-1 rounded-md"
+                                      >
+                                        <Link className="h-3 w-3" />
+                                        View Attachment {index + 1}
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                             <Badge variant="outline">
                               {notification.targetRoles.join(', ')}

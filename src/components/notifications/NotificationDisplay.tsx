@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Bell, CheckCircle, XCircle, Users, Mail, MessageSquare } from 'lucide-react';
+import { Bell, CheckCircle, XCircle, Users, Mail, MessageSquare, Link } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
 
@@ -25,6 +25,7 @@ interface Notification {
     memberName?: string;
     memberEmail?: string;
     sentByName?: string;
+    attachmentLinks?: string[];
 }
 
 export const NotificationDisplay: React.FC = () => {
@@ -106,6 +107,7 @@ export const NotificationDisplay: React.FC = () => {
                 timestamp: n.createdAt,
                 isRead: n.readBy.includes(user?.id || ''),
                 sentByName: n.sentByName,
+                attachmentLinks: n.attachmentLinks,
             })),
         ];
 
@@ -251,6 +253,25 @@ export const NotificationDisplay: React.FC = () => {
                                         <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
                                             {notification.message}
                                         </p>
+                                        {notification.attachmentLinks && notification.attachmentLinks.length > 0 && (
+                                            <div className="mt-3 space-y-2">
+                                                <p className="text-xs font-medium text-muted-foreground">Attachments:</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {notification.attachmentLinks.map((link, index) => (
+                                                        <a
+                                                            key={index}
+                                                            href={link}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center gap-1.5 text-xs text-blue-600 hover:underline bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100"
+                                                        >
+                                                            <Link className="h-3 w-3" />
+                                                            View Attachment {index + 1}
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                         <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
                                             {notification.type === 'global' && notification.sentByName && (
                                                 <span>From: {notification.sentByName}</span>
@@ -284,7 +305,7 @@ export const NotificationDisplay: React.FC = () => {
                     </div>
                 )}
             </CardContent>
-        </Card>
+        </Card >
     );
 };
 
