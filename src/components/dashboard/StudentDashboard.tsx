@@ -981,7 +981,6 @@ export const StudentDashboard: React.FC = () => {
               </Badge>
             </div>
           )}
-          <Button variant="outline" size="sm" className="flex-1 md:flex-none" onClick={() => { if (typeof window !== 'undefined') { const win = window as Window & { runCompleteDemo?: () => void }; if (win.runCompleteDemo) { win.runCompleteDemo(); } } }}>🧪 Test Email System</Button>
           <div className="text-sm text-muted-foreground whitespace-nowrap">Welcome, {user?.name}</div>
         </div>
       </div>
