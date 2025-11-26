@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '@/types/user';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export const SignupForm: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -52,6 +54,33 @@ export const SignupForm: React.FC = () => {
     }
   };
 
+  // Verify user exists in Firebase with matching role
+  const verifyUserInFirebase = async (email: string, role: UserRole): Promise<boolean> => {
+    try {
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('email', '==', email));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        return false;
+      }
+
+      // Check if any matching user has the correct role
+      let roleMatches = false;
+      querySnapshot.forEach((doc) => {
+        const userData = doc.data();
+        if (userData.role === role) {
+          roleMatches = true;
+        }
+      });
+
+      return roleMatches;
+    } catch (error) {
+      console.error('Error verifying user in Firebase:', error);
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -88,10 +117,22 @@ export const SignupForm: React.FC = () => {
       }
     }
 
-    // Validate faculty/reviewer specialization
-    if ((formData.role === 'faculty' || formData.role === 'reviewer') && !formData.specialization) {
+    // Validate faculty specialization
+    if (formData.role === 'faculty' && !formData.specialization) {
       setError('Please select your specialization');
       return;
+    }
+
+    // Verify user exists in Firebase with matching role (except for students)
+    if (formData.role !== 'student') {
+      console.log('Verifying user in Firebase...');
+      const userExists = await verifyUserInFirebase(formData.email, formData.role);
+
+      if (!userExists) {
+        setError(`No ${formData.role} account found with this email address in the system. Please contact the administrator to be added first.`);
+        return;
+      }
+      console.log('User verified in Firebase');
     }
 
     console.log('Form submitted, calling signup...');
@@ -162,7 +203,6 @@ Please contact the administrator if you don't receive approval within 24 hours.`
                 <SelectContent>
                   <SelectItem value="student">Student</SelectItem>
                   <SelectItem value="faculty">Faculty Guide</SelectItem>
-                  <SelectItem value="reviewer">Reviewer</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
@@ -229,7 +269,7 @@ Please contact the administrator if you don't receive approval within 24 hours.`
               </div>
             )}
 
-            {(formData.role === 'faculty' || formData.role === 'reviewer') && (
+            {formData.role === 'faculty' && (
               <div className="space-y-2">
                 <Label htmlFor="specialization">Specialization *</Label>
                 <Select value={formData.specialization} onValueChange={(value) => setFormData({ ...formData, specialization: value })}>
@@ -313,6 +353,13 @@ Please contact the administrator if you don't receive approval within 24 hours.`
                 <p className="text-green-700 font-semibold">✓ College email = Auto-verified!</p>
                 <p className="text-green-600">No admin approval needed - Login immediately after signup</p>
               </div>
+            </div>
+          )}
+
+          {formData.role !== 'student' && (
+            <div className="mt-4 p-3 bg-yellow-50 rounded-md text-xs border border-yellow-200">
+              <p className="font-semibold mb-1 text-yellow-800">⚠️ Important for Faculty and Admin:</p>
+              <p className="text-yellow-700">Your email must already exist in the system with the correct role. Contact the administrator if you need to be added.</p>
             </div>
           )}
         </CardContent>

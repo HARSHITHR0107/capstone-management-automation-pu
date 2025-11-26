@@ -209,7 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role,
         isVerified: autoVerify, // Auto-verify admin and students with college email
         specialization: userData.specialization || null,
-        maxTeams: role === 'faculty' || role === 'reviewer' ? 3 : null,
+        maxTeams: role === 'faculty' ? 3 : null,
         createdAt: serverTimestamp(),
       };
 
