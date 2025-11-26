@@ -1,0 +1,34 @@
+diff --git a/src/components/auth/SignupForm.tsx b/src/components/auth/SignupForm.tsx
+index 1234567..abcdefg 100644
+--- a/src/components/auth/SignupForm.tsx
++++ b/src/components/auth/SignupForm.tsx
+@@ -40,12 +40,23 @@ export const SignupForm: React.FC = () => {
+     const match = lowerEmail.match(/^[a-z]+\.([a-z0-9]+)@presidencyuniversity\.in$/);
+     return match ? match[1].toUpperCase() : ''; // Return in uppercase to match original format
+   };
+ 
++  const extractSpecializationFromEmail = (email: string): string => {
++    // Extract specialization from roll number (e.g., 20221CIT0114 -> CIT)
++    // Case insensitive - matches CSE, CIT, CCS, CBC
++    const lowerEmail = email.toLowerCase();
++    const match = lowerEmail.match(/\d{4,5}(cse|cit|ccs|cbc)\d+@presidencyuniversity\.in$/);
++    return match ? match[1].toUpperCase() : '';
++  };
++
+   const handleEmailChange = (email: string) => {
+     setFormData({ ...formData, email });
+ 
+-    // Auto-extract roll number for students
++    // Auto-extract roll number and specialization for students
+     if (formData.role === 'student' && validateStudentEmail(email)) {
+       const rollNo = extractRollNumberFromEmail(email);
+-      setFormData(prev => ({ ...prev, email, rollNo }));
++      const specialization = extractSpecializationFromEmail(email);
++      setFormData(prev => ({ ...prev, email, rollNo, specialization }));
+     } else if (formData.role === 'student') {
+-      // Clear roll number if email is invalid
+-      setFormData(prev => ({ ...prev, email, rollNo: '' }));
++      // Clear roll number and specialization if email is invalid
++      setFormData(prev => ({ ...prev, email, rollNo: '', specialization: '' }));
+     }
+   };
