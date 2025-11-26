@@ -22,7 +22,7 @@ import { Team, TeamInvite } from '@/types/user';
 /**
  * Constants
  */
-const MAX_TEAM_SIZE = 3;
+const MAX_TEAM_SIZE = 4;
 const MIN_TEAM_SIZE = 1;
 
 /**
@@ -419,8 +419,8 @@ export const checkTeamProjectConsensus = async (teamId: string): Promise<{
             return { hasConsensus: false, projectId: null, selections: {} };
         }
 
-        // Team must have at least 1 member (can be 1, 2, or 3 members)
-        if (team.members.length < MIN_TEAM_SIZE) {
+        // Team must be full (4 members)
+        if (team.members.length < MAX_TEAM_SIZE) {
             return { hasConsensus: false, projectId: null, selections: {} };
         }
 

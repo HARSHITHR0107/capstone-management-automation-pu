@@ -906,7 +906,7 @@ export const StudentDashboard: React.FC = () => {
       const consensus = await checkTeamProjectConsensus(myTeam.id);
 
       if (consensus.hasConsensus && consensus.projectId) {
-        console.log(`🎯 Team consensus reached! All ${myTeam.members.length} member(s) selected project: ${consensus.projectId}`);
+        console.log(`🎯 Team consensus reached! All 4 members selected project: ${consensus.projectId}`);
 
         const projectDoc = await getDoc(doc(db, 'projects', consensus.projectId));
         if (projectDoc.exists()) {
@@ -996,7 +996,7 @@ export const StudentDashboard: React.FC = () => {
       {message && (<Alert className={message.includes('successfully') || message.includes('sent to') || message.includes('✅') ? 'border-green-500 bg-green-50' : message.includes('❌') || message.includes('⚠️') ? 'border-red-500 bg-red-50' : ''}><AlertDescription>{message}</AlertDescription></Alert>)}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">My Team</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{myTeam ? myTeam.name : 'No Team'}</div><p className="text-xs text-muted-foreground">{myTeam ? (<span className="flex items-center gap-2">{teamMembers.length}/3 members{teamCapacity?.isFull && (<Badge variant="secondary" className="text-xs">Full</Badge>)}</span>) : ('Create or join a team')}</p></CardContent></Card>
+        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">My Team</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{myTeam ? myTeam.name : 'No Team'}</div><p className="text-xs text-muted-foreground">{myTeam ? (<span className="flex items-center gap-2">{teamMembers.length}/4 members{teamCapacity?.isFull && (<Badge variant="secondary" className="text-xs">Full</Badge>)}</span>) : ('Create or join a team')}</p></CardContent></Card>
         <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Project Status</CardTitle><BookOpen className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{myProject ? 'Assigned' : 'Not Selected'}</div><p className="text-xs text-muted-foreground">{myProject ? myProject.title : 'Select a project'}</p></CardContent></Card>
         <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Team Status</CardTitle><Badge variant="secondary">{myTeam?.status || 'No Team'}</Badge></CardHeader><CardContent><div className="text-2xl font-bold">{myTeam?.invites.filter(i => i.status === 'pending').length || 0}</div><p className="text-xs text-muted-foreground">Pending invites</p></CardContent></Card>
       </div>
@@ -1036,7 +1036,7 @@ export const StudentDashboard: React.FC = () => {
                 {myProject
                   ? `Current Project: ${myProject.title}`
                   : teamCapacity?.isFull
-                    ? 'Select a project for your team. All team members must select the same project to proceed.'
+                    ? 'Select a project for your team. All 4 members must select the same project to proceed.'
                     : 'Select a project for your team'}
               </CardDescription>
             </CardHeader>
@@ -1124,7 +1124,7 @@ export const StudentDashboard: React.FC = () => {
                             </Button>
                             <p className="text-xs text-center text-muted-foreground">
                               {teamCapacity?.isFull
-                                ? 'All team members must submit the same project to proceed with faculty assignment.'
+                                ? 'All 4 team members must submit the same project to proceed with faculty assignment.'
                                 : 'Your selection will be saved. Once your team is full, all members must select the same project.'}
                             </p>
                           </div>
